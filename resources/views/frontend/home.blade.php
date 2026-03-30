@@ -8,12 +8,13 @@
 
         <div class="container mx-auto relative z-10">
             <div class="max-w-5xl mx-auto text-center">
-                <span class="inline-block font-label text-xs tracking-[0.2em] uppercase text-primary mb-6 font-semibold">{{ $settings['hero_label'] ?? 'ESTABLISHED MMXXIV' }}</span>
+                <span class="block font-label text-xs tracking-[0.2em] uppercase text-primary mb-6 font-semibold">{{ $settings['hero_label'] ?? 'ESTABLISHED MMXXIV' }}</span>
                 <h1 class="font-headline text-6xl md:text-8xl lg:text-[7rem] font-black leading-[0.9] tracking-tighter text-on-surface mb-8">
-                    {{ $settings['hero_title_1'] ?? 'Designing Space,' }}<br/>
-                    {{ $settings['hero_title_2'] ?? 'Defining' }} <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{{ $settings['hero_title_highlight'] ?? 'Stories.' }}</span>
+                    <span class="block">{{ $settings['hero_title_1'] ?? 'Designing Space,' }}</span>
+                    <span class="block">{{ $settings['hero_title_2'] ?? 'Defining' }}</span>
+                    <span class="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{{ $settings['hero_title_highlight'] ?? 'Stories.' }}</span>
                 </h1>
-                <p class="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
+                <p class="block font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
                     {{ $settings['hero_subtitle'] ?? '' }}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
