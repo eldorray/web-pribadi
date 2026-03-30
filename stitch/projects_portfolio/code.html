@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;800;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed": "#dde1ff",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#b7c4ff",
+              "on-primary": "#ffffff",
+              "primary-fixed": "#dde1ff",
+              "inverse-surface": "#313030",
+              "surface-container-high": "#ebe7e7",
+              "outline-variant": "#c3c5d9",
+              "tertiary": "#952200",
+              "on-tertiary-container": "#ffddd5",
+              "surface-container": "#f0edec",
+              "on-secondary-fixed-variant": "#2b418f",
+              "on-tertiary-fixed": "#3c0800",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#434656",
+              "secondary-container": "#95aafe",
+              "tertiary-container": "#bf3003",
+              "surface": "#fcf9f8",
+              "inverse-primary": "#b7c4ff",
+              "inverse-on-surface": "#f3f0ef",
+              "primary-container": "#0052ff",
+              "on-secondary": "#ffffff",
+              "background": "#fcf9f8",
+              "surface-bright": "#fcf9f8",
+              "on-surface": "#1c1b1b",
+              "tertiary-fixed-dim": "#ffb4a1",
+              "surface-dim": "#dcd9d9",
+              "tertiary-fixed": "#ffdbd2",
+              "on-secondary-container": "#253b89",
+              "primary": "#003ec7",
+              "surface-container-highest": "#e5e2e1",
+              "on-error": "#ffffff",
+              "surface-container-low": "#f6f3f2",
+              "error": "#ba1a1a",
+              "on-tertiary-fixed-variant": "#891e00",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001452",
+              "secondary": "#4459a8",
+              "primary-fixed-dim": "#b7c4ff",
+              "surface-tint": "#004ced",
+              "outline": "#737688",
+              "on-primary-fixed": "#001452",
+              "error-container": "#ffdad6",
+              "surface-variant": "#e5e2e1",
+              "on-background": "#1c1b1b",
+              "on-primary-fixed-variant": "#0038b6",
+              "on-primary-container": "#dfe3ff"
+            },
+            fontFamily: {
+              "headline": ["Epilogue", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #fcf9f8;
+        color: #1c1b1b;
+      }
+    </style>
+</head>
+<body class="font-body selection:bg-primary/10 selection:text-primary">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-center w-full">
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-full border border-white/20 dark:border-slate-800/20 px-6 py-3 mt-6 mx-auto w-fit flex items-center gap-8 shadow-[0_20px_50px_rgba(0,82,255,0.05)]">
+<div class="text-xl font-black text-slate-900 dark:text-white font-headline tracking-tighter">Architect.folio</div>
+<div class="hidden md:flex items-center gap-6 font-headline text-sm font-medium tracking-tight">
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors hover:scale-105 active:scale-95 duration-300" href="#">Home</a>
+<a class="text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-1 hover:scale-105 active:scale-95 transition-all duration-300" href="#">Projects</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors hover:scale-105 active:scale-95 duration-300" href="#">About</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors hover:scale-105 active:scale-95 duration-300" href="#">Contact</a>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-white px-6 py-2 rounded-full font-headline text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-300">
+                Get in Touch
+            </button>
+</nav>
+</header>
+<main class="pt-40 pb-20 px-6 md:px-12 max-w-7xl mx-auto">
+<!-- Hero Section / Header -->
+<section class="mb-20">
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight text-on-surface mb-6 max-w-4xl">
+                Crafting digital <span class="text-primary italic">structures</span> with editorial precision.
+            </h1>
+<p class="font-body text-lg text-outline leading-relaxed max-w-2xl">
+                A curated selection of architectural interfaces and high-performance development projects where form follows function.
+            </p>
+</section>
+<!-- Filter System -->
+<nav class="flex flex-wrap items-center gap-x-8 gap-y-4 mb-16 overflow-x-auto pb-4 scrollbar-hide">
+<button class="font-label text-sm font-bold uppercase tracking-[0.05em] text-primary border-b-2 border-primary pb-1">All Projects</button>
+<button class="font-label text-sm font-medium uppercase tracking-[0.05em] text-outline hover:text-on-surface transition-colors pb-1 border-b-2 border-transparent hover:border-outline-variant">UI/UX Design</button>
+<button class="font-label text-sm font-medium uppercase tracking-[0.05em] text-outline hover:text-on-surface transition-colors pb-1 border-b-2 border-transparent hover:border-outline-variant">Development</button>
+<button class="font-label text-sm font-medium uppercase tracking-[0.05em] text-outline hover:text-on-surface transition-colors pb-1 border-b-2 border-transparent hover:border-outline-variant">Branding</button>
+<button class="font-label text-sm font-medium uppercase tracking-[0.05em] text-outline hover:text-on-surface transition-colors pb-1 border-b-2 border-transparent hover:border-outline-variant">Architectural</button>
+</nav>
+<!-- Project Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+<!-- Project Card 1 (Large Span) -->
+<div class="lg:col-span-8 group cursor-pointer">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_40px_60px_rgba(28,27,27,0.04)] hover:shadow-[0_40px_60px_rgba(28,27,27,0.08)] transition-all duration-500">
+<div class="aspect-[16/9] overflow-hidden">
+<img alt="Modern Skyscraper" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Ultra-modern glass skyscraper reflecting a clear blue sky with sharp geometric angles and high-end architectural finish" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGNRtYxjOj7fSXrZZsfbOiKHQDLOf6lYHnO5wkEJE5M0m50paB38w-STBRilPURa2Pt6uJaQPMfkr5OzaM-eaQkhXWLqmknkRqo2sc-cHXmyHgCqCET-HgpQ1WRR3IpU4LbvJT2HmKym87Fu574kfF55j4Szkl3DjJPSNapn7WzOGFJkMQLJSZrUCxCi8ByesEfCFb1nEskaT7YjNpLF_BOy1XxjEFWK9re_glB1FFVeZ_WGaAkrwZtXA88pybEs198P6D9R67CLNf"/>
+</div>
+<div class="p-8 md:p-10">
+<div class="flex items-center gap-3 mb-4">
+<span class="font-label text-xs font-bold uppercase tracking-wider text-primary py-1 px-3 bg-primary-fixed-dim/20 rounded-full">UI/UX Design</span>
+<span class="font-label text-xs font-bold uppercase tracking-wider text-outline py-1 px-3 bg-surface-container-high rounded-full">2024</span>
+</div>
+<h3 class="font-headline text-3xl font-bold mb-4 group-hover:text-primary transition-colors">The Glass Pavilion Interface</h3>
+<p class="font-body text-outline leading-relaxed max-w-xl">
+                            A bespoke dashboard system designed for high-end real estate management, focusing on minimal visual noise and maximum functional clarity.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Project Card 2 (Vertical Sidebar) -->
+<div class="lg:col-span-4 group cursor-pointer">
+<div class="h-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_40px_60px_rgba(28,27,27,0.04)] hover:shadow-[0_40px_60px_rgba(28,27,27,0.08)] transition-all duration-500 flex flex-col">
+<div class="aspect-[4/5] md:aspect-auto md:grow overflow-hidden">
+<img alt="Interior Design" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Interior of a luxury minimalist apartment with large windows, neutral tones, and designer furniture in soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCieIVjwvZGpt2WnT_KC4kkrAshmBw5_cIExuqK7bRaYKPTDAgInzSXLHwwCnlM7Q9Niawm_vHGp_Pkut8QEXQWgVk7ukfB7sy0rMVr7uJpB-jjxWkt5VRhYjuKdhTms7Ptlu0KiHJv_0pMpdLzQisQ2PMnWaLmsMKqLH03dZvlz5_e6nKUbW8DHszKW4cq_0uPd9aUSqWPk0F_AibAtvWbBwBTRcR3VqB53W8lFIVh7WM5i9Dk37_169yJYOqFmbl9-10rhzK9-PO5"/>
+</div>
+<div class="p-8">
+<div class="flex items-center gap-3 mb-4">
+<span class="font-label text-xs font-bold uppercase tracking-wider text-primary py-1 px-3 bg-primary-fixed-dim/20 rounded-full">Branding</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-3 group-hover:text-primary transition-colors">Lumina Spaces</h3>
+<p class="font-body text-sm text-outline leading-relaxed">
+                            Visual identity and digital experience for an avant-garde interior design studio based in Copenhagen.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Project Card 3 -->
+<div class="lg:col-span-4 group cursor-pointer">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_40px_60px_rgba(28,27,27,0.04)] hover:shadow-[0_40px_60px_rgba(28,27,27,0.08)] transition-all duration-500">
+<div class="aspect-square overflow-hidden">
+<img alt="Code on screen" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Close up of clean code on a dark screen with vibrant syntax highlighting in a professional development environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACQiTCxi2rNDf48AIh4RxXKtDKmkC6zXlE2mLPqGlaHCh2pT3Jt5YOrXA8oG342Tg3KsnudR4J7-bLairZSqC2EoGU551QRjDGFMttB0dX2ezI7wSNcYNhFqyBIu4dREjFEnf7silOecFI6le8DRi6h6xS8kKS--EnNVwMZ18K6i9mx4MQ6V6fQhH5zMvyzsm79qC_qkHsC_E169W9GbqP32yyCM_O5MqHc8ZIJHkmGAFpoJcUNoRDjr50Um3sDAiyf-e2CYrFI_ea"/>
+</div>
+<div class="p-8">
+<div class="flex items-center gap-3 mb-4">
+<span class="font-label text-xs font-bold uppercase tracking-wider text-primary py-1 px-3 bg-primary-fixed-dim/20 rounded-full">Development</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-3 group-hover:text-primary transition-colors">Core Engine v2</h3>
+<p class="font-body text-sm text-outline leading-relaxed">
+                            Building a lightning-fast headless CMS integration for global architectural firms.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Project Card 4 -->
+<div class="lg:col-span-4 group cursor-pointer">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_40px_60px_rgba(28,27,27,0.04)] hover:shadow-[0_40px_60px_rgba(28,27,27,0.08)] transition-all duration-500">
+<div class="aspect-square overflow-hidden">
+<img alt="Modern House" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Low angle shot of a minimalist luxury villa with a pool under a twilight sky with warm interior lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiuV78wDnUjWOIPJot2h1WTubvK07i_iX4OIteFzUkTtTPRxj3FNfLgEn0wRYmlinOsF-sQ6BRoo4W7RYahH0HsK8r4lnkWOHnpyo-tj0TZ-EDe9cf-oNauKGbusqfjmubu_RkFNgWDQNzhIEZchKvrJvTEvwytYXUMpc62yQHYE7RfUojXH3sZvwyfeK_Tya6h25k1Toyv2pPOY_5T8B8X6E39tSZqcpOq4viP1IeQ2mBIdG_XdJ26Z17EQCmcxl2fW-bUZU_nwcC"/>
+</div>
+<div class="p-8">
+<div class="flex items-center gap-3 mb-4">
+<span class="font-label text-xs font-bold uppercase tracking-wider text-primary py-1 px-3 bg-primary-fixed-dim/20 rounded-full">Architectural</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-3 group-hover:text-primary transition-colors">The Zenith Project</h3>
+<p class="font-body text-sm text-outline leading-relaxed">
+                            A spatial exploration of virtual reality galleries for digital artists and collectors.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Project Card 5 -->
+<div class="lg:col-span-4 group cursor-pointer">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_40px_60px_rgba(28,27,27,0.04)] hover:shadow-[0_40px_60px_rgba(28,27,27,0.08)] transition-all duration-500">
+<div class="aspect-square overflow-hidden">
+<img alt="System Architecture" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="Digital concept art representing network nodes and system architecture with blue glowing lines and abstract shapes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlisDtsMgB_XkR57xe1CICXXmZOq-nW719OUrPh6fgZh6AEqvgzS5r8swAUGz8Sky5wKTwZlMhpsdgYEmUELDV3rw_19728C8LSjSUcWpXdMTDLyeLFsMywHXvwrXi3OTPxccYWwLDdbpK-eK0YQ0PAB-VJ5jO_TOXlWsgYsrL5zRffiWXJoZViPocV8DPXVUtOxhkI0vM0oEPmITSjSWmooE_iSvuJv0XhrXbnf8rZ0FxFUuzDTjemebTs2Y-biI1ziu405nfV60F"/>
+</div>
+<div class="p-8">
+<div class="flex items-center gap-3 mb-4">
+<span class="font-label text-xs font-bold uppercase tracking-wider text-primary py-1 px-3 bg-primary-fixed-dim/20 rounded-full">Development</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-3 group-hover:text-primary transition-colors">Neural Grid</h3>
+<p class="font-body text-sm text-outline leading-relaxed">
+                            Algorithmic layout generator for editorial-style web applications using advanced CSS grid.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA Section -->
+<section class="mt-32 p-12 md:p-20 bg-primary-container rounded-3xl text-on-primary-container flex flex-col items-center text-center">
+<h2 class="font-headline text-4xl md:text-5xl font-bold mb-6 max-w-2xl">Ready to build your next structural masterpiece?</h2>
+<p class="font-body text-lg mb-10 opacity-80 max-w-xl">Let's collaborate to bring your vision into the digital physical realm with precision and style.</p>
+<div class="flex flex-col md:flex-row gap-4">
+<button class="px-10 py-4 bg-white text-primary font-headline font-bold rounded-full hover:scale-105 active:scale-95 transition-all">Start a Project</button>
+<button class="px-10 py-4 bg-primary text-white font-headline font-bold rounded-full border border-white/20 hover:scale-105 active:scale-95 transition-all">View Process</button>
+</div>
+</section>
+</main>
+<!-- Footer Section -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full pt-20 pb-10 px-8">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-slate-200/20 dark:border-slate-800/20 pt-10">
+<div class="flex flex-col items-center md:items-start gap-4">
+<span class="font-epilogue font-bold text-slate-900 dark:text-white text-lg">Architect.folio</span>
+<p class="font-inter text-sm leading-relaxed text-slate-500 dark:text-slate-400">© 2024 The Editorial Architect. All rights reserved.</p>
+</div>
+<div class="flex items-center gap-8">
+<a class="font-inter text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all" href="#">LinkedIn</a>
+<a class="font-inter text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all" href="#">GitHub</a>
+<a class="font-inter text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all" href="#">Dribbble</a>
+<a class="font-inter text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all" href="#">Instagram</a>
+</div>
+</div>
+</footer>
+</body></html>
