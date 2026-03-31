@@ -24,7 +24,7 @@
     <header class="fixed top-0 left-0 right-0 z-50 flex justify-center w-full">
         <nav class="glass-nav rounded-full px-6 py-3 mt-6 mx-auto w-fit flex items-center gap-10">
             <a href="{{ route('home') }}" class="text-xl font-black text-on-surface font-headline tracking-tight">
-                {{ $settings['site_name'] ?? 'Architect.folio' }}
+                {{ $settings['site_name'] ?? 'My Portofolio' }}
             </a>
             <div class="hidden md:flex items-center gap-8 font-headline text-sm font-medium tracking-tight">
                 <a class="{{ request()->routeIs('home') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-outline hover:text-on-surface' }} hover:scale-105 active:scale-95 transition-all duration-300" href="{{ route('home') }}">Home</a>
@@ -46,7 +46,7 @@
     <footer class="bg-surface-container-low w-full pt-20 pb-10 px-8">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-t border-outline-variant/20 pt-10">
             <div class="flex flex-col gap-2">
-                <span class="font-headline font-bold text-on-surface text-xl">{{ $settings['site_name'] ?? 'Architect.folio' }}</span>
+                <span class="font-headline font-bold text-on-surface text-xl">{{ $settings['site_name'] ?? 'My Portofolio' }}</span>
                 <p class="font-body text-sm leading-relaxed text-outline max-w-xs">{{ $settings['site_tagline'] ?? '' }}</p>
             </div>
             <div class="flex flex-wrap justify-center gap-8">
@@ -55,7 +55,7 @@
                 @endforeach
             </div>
             <div class="text-outline font-body text-sm">
-                © {{ date('Y') }} {{ $settings['site_name'] ?? 'Architect.folio' }}. All rights reserved.
+                © {{ date('Y') }} {{ $settings['site_name'] ?? 'My Portofolio' }}. All rights reserved.
             </div>
         </div>
     </footer>

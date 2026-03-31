@@ -17,7 +17,7 @@
                 </div>
                 <div class="space-y-2">
                     <label class="font-label text-xs uppercase tracking-widest text-outline font-bold">Email</label>
-                    <input wire:model="email" type="email" placeholder="hello@architect.folio"
+                    <input wire:model="email" type="email" placeholder="hello@My Portofolio"
                            class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
                     @error('email') <span class="text-error text-xs">{{ $message }}</span> @enderror
                 </div>

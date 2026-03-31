@@ -13,7 +13,7 @@
 <body class="bg-surface text-on-surface antialiased min-h-screen flex items-center justify-center px-6">
     <div class="w-full max-w-md">
         <div class="text-center mb-10">
-            <a href="{{ route('home') }}" class="text-2xl font-black font-headline text-on-surface">Architect.folio</a>
+            <a href="{{ route('home') }}" class="text-2xl font-black font-headline text-on-surface">My Portofolio</a>
             <p class="text-on-surface-variant mt-2">Sign in to your admin panel</p>
         </div>
 

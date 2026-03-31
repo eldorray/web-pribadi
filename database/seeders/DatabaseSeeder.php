@@ -59,12 +59,12 @@ class DatabaseSeeder extends Seeder
             ['key' => 'contact_address_1', 'value' => '1200 Architecture Lane', 'group' => 'contact'],
             ['key' => 'contact_address_2', 'value' => 'Design District', 'group' => 'contact'],
             ['key' => 'contact_address_3', 'value' => 'New York, NY 10012', 'group' => 'contact'],
-            ['key' => 'contact_email', 'value' => 'hello@architect.folio', 'group' => 'contact'],
+            ['key' => 'contact_email', 'value' => 'hello@My Portofolio', 'group' => 'contact'],
             ['key' => 'contact_image', 'value' => '', 'type' => 'image', 'group' => 'contact'],
             ['key' => 'contact_availability', 'value' => 'Currently accepting new commissions for 2024.', 'group' => 'contact'],
 
             // General
-            ['key' => 'site_name', 'value' => 'Architect.folio', 'group' => 'general'],
+            ['key' => 'site_name', 'value' => 'My Portofolio', 'group' => 'general'],
             ['key' => 'site_tagline', 'value' => 'Crafting meaningful architecture through editorial design and intentional minimalism.', 'group' => 'general'],
         ];
 

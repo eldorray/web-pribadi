@@ -209,3 +209,44 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--color-primary);
     font-weight: 600;
 }
+
+/* ========================================
+   Mobile Optimizations
+   ======================================== */
+
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Remove tap highlight on mobile */
+a, button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* Better touch interaction on mobile */
+@media (max-width: 768px) {
+    .glass-nav {
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 8px 32px rgba(0, 82, 255, 0.06);
+    }
+}
