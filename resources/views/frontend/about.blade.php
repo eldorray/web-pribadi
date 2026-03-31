@@ -41,6 +41,7 @@
                 <span class="font-label text-sm text-outline hidden sm:block">Capabilities</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                @foreach($skills as $skill)
                     @if($skill->is_wide)
                         <div class="sm:col-span-2 bg-surface-container-low p-6 sm:p-8 rounded-2xl transition-all hover:bg-surface-container-lowest hover:shadow-xl hover:shadow-primary/5 group">
                     @else
