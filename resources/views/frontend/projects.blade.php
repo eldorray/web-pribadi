@@ -32,7 +32,7 @@
             @foreach($projects as $index => $project)
                 @if($index === 0)
                     <!-- Large Span -->
-                    <div class="lg:col-span-8 group cursor-pointer">
+                    <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="lg:col-span-8 group cursor-pointer block">
                         <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
                             <div class="aspect-[16/9] overflow-hidden">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -47,10 +47,10 @@
                                 <p class="font-body text-outline leading-relaxed max-w-xl">{{ $project->description }}</p>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @elseif($index === 1)
                     <!-- Vertical Sidebar -->
-                    <div class="lg:col-span-4 group cursor-pointer">
+                    <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="lg:col-span-4 group cursor-pointer block">
                         <div class="h-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-ambient hover:shadow-ambient-hover transition-all duration-500 flex flex-col">
                             <div class="aspect-[4/5] md:aspect-auto md:grow overflow-hidden">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -64,10 +64,10 @@
                                 <p class="font-body text-sm text-outline leading-relaxed">{{ $project->description }}</p>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @else
                     <!-- Regular Grid Cards -->
-                    <div class="lg:col-span-4 group cursor-pointer">
+                    <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="lg:col-span-4 group cursor-pointer block">
                         <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
                             <div class="aspect-square overflow-hidden">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -81,7 +81,7 @@
                                 <p class="font-body text-sm text-outline leading-relaxed">{{ $project->description }}</p>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @endif
             @endforeach
         </div>

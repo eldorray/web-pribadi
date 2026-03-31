@@ -22,6 +22,7 @@ class Index extends Component
     public string $year = '';
     public $image = null;
     public string $existingImage = '';
+    public string $link = '';
     public bool $is_featured = false;
     public int $sort_order = 0;
 
@@ -30,6 +31,7 @@ class Index extends Component
         'description' => 'required|min:10',
         'category' => 'required|max:100',
         'year' => 'required|digits:4',
+        'link' => 'nullable|url|max:500',
         'is_featured' => 'boolean',
         'sort_order' => 'integer',
     ];
@@ -50,6 +52,7 @@ class Index extends Component
         $this->category = $project->category;
         $this->year = $project->year;
         $this->existingImage = $project->image ?? '';
+        $this->link = $project->link ?? '';
         $this->is_featured = $project->is_featured;
         $this->sort_order = $project->sort_order;
         $this->showModal = true;
@@ -65,6 +68,7 @@ class Index extends Component
             'description' => $this->description,
             'category' => $this->category,
             'year' => $this->year,
+            'link' => $this->link ?: null,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
         ];
@@ -114,6 +118,7 @@ class Index extends Component
         $this->year = '';
         $this->image = null;
         $this->existingImage = '';
+        $this->link = '';
         $this->is_featured = false;
         $this->sort_order = 0;
         $this->editingId = null;

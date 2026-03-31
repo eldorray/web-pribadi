@@ -84,6 +84,10 @@
                         <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Description</label>
                         <textarea wire:model="description" rows="4" class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none resize-none"></textarea>
                         @error('description') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                    <div>
+                        <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Link URL</label>
+                        <input wire:model="link" type="url" placeholder="https://example.com" class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none" />
+                        @error('link') <span class="text-error text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>

@@ -96,7 +96,7 @@
                 @foreach($featuredProjects as $index => $project)
                     @if($index === 0)
                         <!-- Project 1: Large Feature -->
-                        <div class="md:col-span-8 group cursor-pointer">
+                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-8 group cursor-pointer block">
                             <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[16/9] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                      src="{{ $project->image_url }}"/>
@@ -110,10 +110,10 @@
                                     <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     @elseif($index === 1)
                         <!-- Project 2: Vertical Side -->
-                        <div class="md:col-span-4 group cursor-pointer">
+                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-4 group cursor-pointer block">
                             <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[3/4] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                      src="{{ $project->image_url }}"/>
@@ -123,10 +123,10 @@
                             </div>
                             <span class="text-xs font-label uppercase text-primary font-bold tracking-widest">{{ $project->category }} • {{ $project->year }}</span>
                             <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
-                        </div>
+                        </a>
                     @elseif($index === 2)
                         <!-- Project 3: Wide Bottom -->
-                        <div class="md:col-span-12 group cursor-pointer">
+                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-12 group cursor-pointer block">
                             <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[21/9] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
                                 <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                      src="{{ $project->image_url }}"/>
@@ -140,7 +140,7 @@
                                     <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     @endif
                 @endforeach
             </div>

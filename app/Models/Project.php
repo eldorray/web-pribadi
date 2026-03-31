@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class Project extends Model
 {
     protected $fillable = [
-        'title', 'slug', 'description', 'category', 'year', 'image', 'is_featured', 'sort_order',
+        'title', 'slug', 'description', 'category', 'year', 'image', 'link', 'is_featured', 'sort_order',
     ];
 
     protected $casts = [
