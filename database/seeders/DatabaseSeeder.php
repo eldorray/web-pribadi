@@ -31,6 +31,8 @@ class DatabaseSeeder extends Seeder
             ['key' => 'hero_title_1', 'value' => 'Designing Space,', 'group' => 'hero'],
             ['key' => 'hero_title_2', 'value' => 'Defining', 'group' => 'hero'],
             ['key' => 'hero_title_highlight', 'value' => 'Stories.', 'group' => 'hero'],
+            ['key' => 'hero_title_highlight_2', 'value' => 'a Vibe Coder.', 'group' => 'hero'],
+            ['key' => 'hero_title_highlight_3', 'value' => 'A Head Master.', 'group' => 'hero'],
             ['key' => 'hero_subtitle', 'value' => 'A multidisciplinary studio bridging the gap between digital precision and tactile architectural elegance. We build environments that breathe.', 'group' => 'hero'],
 
             // About

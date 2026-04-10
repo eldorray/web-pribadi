@@ -12,7 +12,10 @@
                 <h1 class="font-headline text-4xl sm:text-6xl md:text-8xl lg:text-[7rem] font-black leading-[0.9] tracking-tighter text-on-surface mb-6 sm:mb-8">
                     <span class="block">{{ $settings['hero_title_1'] ?? 'Designing Space,' }}</span>
                     <span class="block">{{ $settings['hero_title_2'] ?? 'Defining' }}</span>
-                    <span class="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{{ $settings['hero_title_highlight'] ?? 'Stories.' }}</span>
+                    <span class="block hero-typewriter-wrapper">
+                        <span id="hero-typewriter" class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary"></span>
+                        <span class="hero-cursor"></span>
+                    </span>
                 </h1>
                 <p class="block font-body text-base sm:text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
                     {{ $settings['hero_subtitle'] ?? '' }}
@@ -164,5 +167,83 @@
             </div>
         </div>
     </section>
+
+    {{-- Typewriter CSS --}}
+    <style>
+        .hero-typewriter-wrapper {
+            display: inline-flex;
+            align-items: baseline;
+            min-height: 1.1em;
+        }
+
+        .hero-cursor {
+            display: inline-block;
+            width: 4px;
+            height: 0.85em;
+            background: linear-gradient(to bottom, var(--md-sys-color-primary), var(--md-sys-color-secondary));
+            margin-left: 4px;
+            border-radius: 2px;
+            animation: cursorBlink 0.7s ease-in-out infinite;
+            vertical-align: baseline;
+            position: relative;
+            top: 0.05em;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+
+    {{-- Typewriter Script --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const words = [
+                @json($settings['hero_title_highlight'] ?? 'Stories.'),
+                @json($settings['hero_title_highlight_2'] ?? 'a Vibe Coder.'),
+                @json($settings['hero_title_highlight_3'] ?? 'A Head Master.')
+            ];
+
+            const el = document.getElementById('hero-typewriter');
+            if (!el) return;
+
+            let wordIndex = 0;
+            const typeSpeed = 100;      // ms per character typing
+            const eraseSpeed = 60;      // ms per character erasing
+            const holdDelay = 2500;     // ms to hold the completed word
+            const nextWordDelay = 500;  // ms pause before typing next word
+
+            function typeWord(word, charIndex, callback) {
+                if (charIndex <= word.length) {
+                    el.textContent = word.substring(0, charIndex);
+                    setTimeout(() => typeWord(word, charIndex + 1, callback), typeSpeed);
+                } else {
+                    setTimeout(callback, holdDelay);
+                }
+            }
+
+            function eraseWord(callback) {
+                const currentText = el.textContent;
+                if (currentText.length > 0) {
+                    el.textContent = currentText.substring(0, currentText.length - 1);
+                    setTimeout(() => eraseWord(callback), eraseSpeed);
+                } else {
+                    setTimeout(callback, nextWordDelay);
+                }
+            }
+
+            function loop() {
+                const word = words[wordIndex];
+                typeWord(word, 0, function () {
+                    eraseWord(function () {
+                        wordIndex = (wordIndex + 1) % words.length;
+                        loop();
+                    });
+                });
+            }
+
+            loop();
+        });
+    </script>
 
 </x-layouts.frontend>
