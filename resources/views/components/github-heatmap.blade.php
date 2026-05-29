@@ -6,7 +6,7 @@
     $data = $username ? \App\Services\GithubContributions::fetch($username) : null;
 @endphp
 
-@if ($data)
+@if ($username)
     <section class="surface p-6 sm:p-10" data-reveal>
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
             <div>
@@ -14,10 +14,14 @@
                     GitHub Contributions
                 </h2>
                 <p class="text-sm" style="color: var(--color-ink-4);">
-                    {{ number_format($data['total']) }} contributions in the last year
+                    @if ($data)
+                        {{ number_format($data['total']) }} contributions in the last year
+                    @else
+                        @{{ $username }}
+                    @endif
                 </p>
             </div>
-            <a href="https://github.com/{{ $data['username'] }}" target="_blank" rel="noopener"
+            <a href="https://github.com/{{ $username }}" target="_blank" rel="noopener"
                 class="text-sm font-medium inline-flex items-center gap-1 hover:underline self-start sm:self-auto"
                 style="color: var(--color-ink-3);">
                 View GitHub
@@ -25,54 +29,64 @@
             </a>
         </div>
 
-        {{-- Heatmap (horizontal scroll on small screens) --}}
-        <div class="overflow-x-auto scrollbar-hide -mx-2 px-2">
-            <div class="gh-heatmap">
-                {{-- Month labels row --}}
-                <div class="gh-months">
-                    @foreach ($data['months'] as $m)
-                        <span class="gh-month" style="--col: {{ $m['col'] }};">{{ $m['label'] }}</span>
-                    @endforeach
-                </div>
-
-                {{-- Weekday labels (col 1) --}}
-                <div class="gh-days">
-                    <span style="grid-row: 2;">Mon</span>
-                    <span style="grid-row: 4;">Wed</span>
-                    <span style="grid-row: 6;">Fri</span>
-                </div>
-
-                {{-- Grid of cells --}}
-                <div class="gh-grid">
-                    @foreach ($data['weeks'] as $week)
-                        @foreach ($week as $day)
-                            @if (empty($day['empty']))
-                                <span class="gh-cell" data-level="{{ $day['level'] }}"
-                                    title="{{ $day['count'] }} contributions on {{ $day['date'] }}"></span>
-                            @else
-                                <span class="gh-cell gh-cell--empty"></span>
-                            @endif
+        @if ($data)
+            {{-- Heatmap --}}
+            <div class="overflow-x-auto scrollbar-hide -mx-2 px-2">
+                <div class="gh-heatmap">
+                    <div class="gh-months">
+                        @foreach ($data['months'] as $m)
+                            <span class="gh-month" style="--col: {{ $m['col'] }};">{{ $m['label'] }}</span>
                         @endforeach
-                    @endforeach
+                    </div>
+                    <div class="gh-days">
+                        <span style="grid-row: 2;">Mon</span>
+                        <span style="grid-row: 4;">Wed</span>
+                        <span style="grid-row: 6;">Fri</span>
+                    </div>
+                    <div class="gh-grid">
+                        @foreach ($data['weeks'] as $week)
+                            @foreach ($week as $day)
+                                @if (empty($day['empty']))
+                                    <span class="gh-cell" data-level="{{ $day['level'] }}"
+                                        title="{{ $day['count'] }} contributions on {{ $day['date'] }}"></span>
+                                @else
+                                    <span class="gh-cell gh-cell--empty"></span>
+                                @endif
+                            @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Legend --}}
-        <div class="flex items-center justify-between mt-5 text-xs" style="color: var(--color-ink-5);">
-            <a href="https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/viewing-contributions-on-your-profile"
-                target="_blank" rel="noopener" class="hover:underline" style="color: var(--color-ink-4);">
-                Learn how GitHub counts contributions
-            </a>
-            <div class="flex items-center gap-1.5">
-                <span>Less</span>
-                <span class="gh-cell gh-cell--legend" data-level="0"></span>
-                <span class="gh-cell gh-cell--legend" data-level="1"></span>
-                <span class="gh-cell gh-cell--legend" data-level="2"></span>
-                <span class="gh-cell gh-cell--legend" data-level="3"></span>
-                <span class="gh-cell gh-cell--legend" data-level="4"></span>
-                <span>More</span>
+            <div class="flex items-center justify-between mt-5 text-xs" style="color: var(--color-ink-5);">
+                <a href="https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/viewing-contributions-on-your-profile"
+                    target="_blank" rel="noopener" class="hover:underline" style="color: var(--color-ink-4);">
+                    Learn how GitHub counts contributions
+                </a>
+                <div class="flex items-center gap-1.5">
+                    <span>Less</span>
+                    <span class="gh-cell gh-cell--legend" data-level="0"></span>
+                    <span class="gh-cell gh-cell--legend" data-level="1"></span>
+                    <span class="gh-cell gh-cell--legend" data-level="2"></span>
+                    <span class="gh-cell gh-cell--legend" data-level="3"></span>
+                    <span class="gh-cell gh-cell--legend" data-level="4"></span>
+                    <span>More</span>
+                </div>
             </div>
-        </div>
+        @else
+            {{-- Fallback when fetch fails --}}
+            <div class="py-12 text-center">
+                <span class="material-symbols-outlined text-4xl mb-3 block"
+                    style="color: var(--color-ink-5);">cloud_off</span>
+                <p class="text-sm mb-1" style="color: var(--color-ink-3);">Couldn't load contribution data right now.
+                </p>
+                <p class="text-xs" style="color: var(--color-ink-5);">
+                    Check <a href="https://github.com/{{ $username }}" target="_blank" rel="noopener"
+                        class="underline">github.com/{{ $username }}</a> directly,
+                    or run <code class="px-1.5 py-0.5 rounded text-[11px]"
+                        style="background: var(--color-card-soft);">php artisan github:diagnose</code> on your server.
+                </p>
+            </div>
+        @endif
     </section>
 @endif
