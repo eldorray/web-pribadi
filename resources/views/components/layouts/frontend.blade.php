@@ -39,10 +39,11 @@
 
     <div class="page-bg">
         <div class="shell">
-            {{-- Topbar: "Hola!" (left) + nav links (right) --}}
+            {{-- Topbar: brand + (desktop nav OR mobile status badge) --}}
             <header class="topbar animate-reveal delay-100">
-                <a href="{{ route('home') }}" class="brand-hola">Assalamualaikum . . .</a>
+                <a href="{{ route('home') }}" class="brand-hola">{{ $settings['site_name'] ?? 'Hola!' }}</a>
 
+                {{-- Desktop nav --}}
                 <nav class="topnav hidden md:inline-flex" aria-label="Primary">
                     <a href="{{ route('about') }}"
                         class="topnav__link {{ request()->routeIs('about') ? 'is-active' : '' }}">About</a>
@@ -52,11 +53,12 @@
                         class="topnav__link {{ request()->routeIs('contact') ? 'is-active' : '' }}">Contact</a>
                 </nav>
 
-                {{-- Mobile: just a link to contact --}}
-                <a href="{{ route('contact') }}" class="md:hidden text-sm font-semibold"
-                    style="color: var(--color-ink);">
-                    Contact
-                </a>
+                {{-- Mobile: subtle availability indicator (nav handled by bottom dock) --}}
+                <span class="md:hidden inline-flex items-center gap-1.5 text-[11px] font-medium"
+                    style="color: var(--color-ink-4);">
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: #10b981;"></span>
+                    Available
+                </span>
             </header>
 
             {{ $slot }}

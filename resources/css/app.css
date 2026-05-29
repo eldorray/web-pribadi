@@ -819,7 +819,71 @@ body {
 }
 
 /* ========================================
-   Tools — Fan stack hover animation
+   Tools — Fan stack (desktop) + Grid (mobile)
+   ======================================== */
+
+/* Mobile: simple 4-column grid (no fan, no rotation) */
+.tool-grid-mobile {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    max-width: 380px;
+    margin: 0 auto;
+    padding: 0.5rem 0;
+}
+
+.tool-tile {
+    aspect-ratio: 1;
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.tool-tile:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.tool-tile__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.tool-tile__icon svg { width: 22px; height: 22px; }
+
+.tool-tile__name {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--color-ink-3);
+    text-align: center;
+    line-height: 1;
+}
+
+/* Hide fan stack on mobile, show grid */
+@media (max-width: 767px) {
+    .tool-fan { display: none !important; }
+}
+
+/* Hide grid on desktop, show fan stack */
+@media (min-width: 768px) {
+    .tool-grid-mobile { display: none; }
+}
+
+/* ========================================
+   Tools — Fan stack hover animation (desktop only)
    ======================================== */
 
 .tool-fan {

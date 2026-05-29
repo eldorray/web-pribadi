@@ -110,7 +110,7 @@
     </div>
 
     {{-- ============================================
-         03 — TOOLS I USE (fan stack)
+         03 — TOOLS I USE (fan stack on desktop, grid on mobile)
     ============================================ --}}
     @if ($tools->count() > 0)
         <section class="section" data-reveal>
@@ -119,6 +119,27 @@
                 <p>My favorite stack for designing and building digital experiences.</p>
             </div>
 
+            {{-- Mobile: simple grid (visible on < md) --}}
+            <div class="tool-grid-mobile">
+                @foreach ($tools as $tool)
+                    <div class="tool-tile" aria-label="{{ $tool->name }}">
+                        <div class="tool-tile__icon" style="background: {{ $tool->gradient }};">
+                            @if ($tool->icon_url)
+                                <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}"
+                                    class="w-[22px] h-[22px] object-contain" />
+                            @elseif($tool->icon_svg)
+                                {!! $tool->icon_svg !!}
+                            @else
+                                <span class="material-symbols-outlined"
+                                    style="color: white; font-size: 18px;">apps</span>
+                            @endif
+                        </div>
+                        <span class="tool-tile__name">{{ $tool->name }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Desktop: fan stack (visible on >= md) --}}
             <div class="tool-fan">
                 @foreach ($tools as $tool)
                     <div class="tool-fan-slot" tabindex="0" aria-label="{{ $tool->name }}">
