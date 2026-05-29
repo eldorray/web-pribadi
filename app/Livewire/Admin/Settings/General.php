@@ -19,6 +19,7 @@ class General extends Component
         'about_portrait',
         'about_page_portrait',
         'contact_image',
+        'site_favicon',
     ];
 
     public function mount()

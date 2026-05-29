@@ -1,249 +1,213 @@
-<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" :title="($settings['site_name'] ?? 'My Portofolio') . ' | Editorial Portfolio'">
+<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" :title="($settings['site_name'] ?? 'Studio') . ' — Design Engineer'">
 
-    <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center justify-center pt-24 px-4 sm:px-6 md:px-12 overflow-hidden bg-surface">
-        <!-- Asymmetrical Design Element -->
-        <div class="absolute -top-24 -right-24 w-64 sm:w-96 h-64 sm:h-96 bg-primary-container/5 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-surface-container-low to-transparent"></div>
+    {{-- ============================================
+         01 — HERO (2-column)
+    ============================================ --}}
+    <section class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-2 lg:pt-4">
 
-        <div class="container mx-auto relative z-10">
-            <div class="max-w-5xl mx-auto text-center">
-                <span class="block font-label text-[10px] sm:text-xs tracking-[0.2em] uppercase text-primary mb-4 sm:mb-6 font-semibold">{{ $settings['hero_label'] ?? 'ESTABLISHED MMXXIV' }}</span>
-                <h1 class="font-headline text-4xl sm:text-6xl md:text-8xl lg:text-[7rem] font-black leading-[0.9] tracking-tighter text-on-surface mb-6 sm:mb-8">
-                    <span class="block">{{ $settings['hero_title_1'] ?? 'Designing Space,' }}</span>
-                    <span class="block">{{ $settings['hero_title_2'] ?? 'Defining' }}</span>
-                    <span class="block hero-typewriter-wrapper">
-                        <span id="hero-typewriter" class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary"></span>
-                        <span class="hero-cursor"></span>
-                    </span>
-                </h1>
-                <p class="block font-body text-base sm:text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
-                    {{ $settings['hero_subtitle'] ?? '' }}
-                </p>
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-                    <a class="btn-primary-gradient px-8 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-base sm:text-lg shadow-xl" href="{{ route('projects') }}">
-                        View My Work
-                    </a>
-                    <a class="bg-surface-container-high text-on-surface px-8 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-base sm:text-lg hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2 group" href="{{ route('about') }}">
-                        Read the Story
-                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Background subtle pattern -->
-        <div class="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-dot-pattern"></div>
-    </section>
-
-    <!-- Intro Section: The Narrative -->
-    <section class="py-16 sm:py-24 lg:py-32 px-4 sm:px-6 md:px-12 bg-surface-container-low" id="about">
-        <div class="container mx-auto">
-            <div class="flex flex-col lg:flex-row gap-12 sm:gap-16 lg:gap-20 items-center">
-                <div class="lg:w-5/12 relative w-full max-w-md mx-auto lg:max-w-none">
-                    <div class="aspect-[4/5] rounded-xl overflow-hidden shadow-2xl relative z-10 bg-surface-container-highest">
-                        <img alt="Portrait" class="w-full h-full object-cover"
-                             src="{{ $settings['about_portrait'] ?? '' }}"/>
-                    </div>
-                    <div class="absolute -bottom-4 sm:-bottom-8 -left-4 sm:-left-8 w-32 sm:w-48 h-32 sm:h-48 bg-tertiary-fixed rounded-xl -z-10"></div>
-                    <div class="absolute top-1/2 -right-12 -translate-y-1/2 font-headline text-9xl text-on-surface/5 font-black select-none vertical-text hidden xl:block">
-                        CREATIVE
-                    </div>
-                </div>
-                <div class="lg:w-7/12">
-                    <div class="flex items-center gap-4 mb-6 sm:mb-8">
-                        <div class="h-[1px] w-12 bg-primary"></div>
-                        <span class="font-label text-sm uppercase tracking-widest text-primary font-bold">{{ $settings['about_label'] ?? 'The Philosophy' }}</span>
-                    </div>
-                    <h2 class="font-headline text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 sm:mb-8 leading-tight text-on-surface">
-                        {{ $settings['about_title'] ?? '' }}
-                    </h2>
-                    <div class="space-y-4 sm:space-y-6 text-on-surface-variant font-body text-base sm:text-lg leading-relaxed">
-                        <p>{{ $settings['about_text_1'] ?? '' }}</p>
-                        <p>{{ $settings['about_text_2'] ?? '' }}</p>
-                    </div>
-                    <div class="mt-8 sm:mt-12 flex flex-wrap gap-8 sm:gap-12 border-t border-outline-variant/20 pt-8 sm:pt-10">
-                        <div>
-                            <div class="text-2xl sm:text-3xl font-black font-headline text-primary">{{ $settings['stat_1_value'] ?? '120+' }}</div>
-                            <div class="text-xs font-label uppercase tracking-widest text-outline mt-1">{{ $settings['stat_1_label'] ?? 'Projects Built' }}</div>
+        {{-- LEFT --}}
+        <div class="lg:col-span-7">
+            <div class="flex items-center gap-4 mb-6 animate-reveal delay-150">
+                <div class="avatar-tile">
+                    @if (!empty($settings['about_portrait']))
+                        <img src="{{ $settings['about_portrait'] }}" alt="Avatar" />
+                    @else
+                        <div class="w-full h-full flex items-center justify-center text-xl font-bold"
+                            style="background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff;">
+                            {{ strtoupper(substr($settings['site_name'] ?? 'M', 0, 1)) }}
                         </div>
-                        <div>
-                            <div class="text-2xl sm:text-3xl font-black font-headline text-primary">{{ $settings['stat_2_value'] ?? '15' }}</div>
-                            <div class="text-xs font-label uppercase tracking-widest text-outline mt-1">{{ $settings['stat_2_label'] ?? 'Design Awards' }}</div>
-                        </div>
-                        <div>
-                            <div class="text-2xl sm:text-3xl font-black font-headline text-primary">{{ $settings['stat_3_value'] ?? '09' }}</div>
-                            <div class="text-xs font-label uppercase tracking-widest text-outline mt-1">{{ $settings['stat_3_label'] ?? 'Global Cities' }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Highlights: Projects -->
-    <section class="py-16 sm:py-24 lg:py-32 px-4 sm:px-6 md:px-12 bg-surface" id="projects">
-        <div class="container mx-auto">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 sm:mb-20 gap-4">
-                <div class="max-w-2xl">
-                    <span class="font-label text-xs tracking-widest uppercase text-tertiary font-bold mb-3 sm:mb-4 block">Selected Portfolio</span>
-                    <h2 class="font-headline text-3xl sm:text-4xl lg:text-5xl font-black text-on-surface">Featured Highlights</h2>
-                </div>
-                <a class="flex items-center gap-2 font-bold text-primary hover:gap-4 transition-all duration-300 text-sm sm:text-base" href="{{ route('projects') }}">
-                    View All Projects <span class="material-symbols-outlined">north_east</span>
-                </a>
-            </div>
-
-            <!-- Project Grid: Bento/Editorial Style -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8">
-                @foreach($featuredProjects as $index => $project)
-                    @if($index === 0)
-                        <!-- Project 1: Large Feature -->
-                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-8 group cursor-pointer block">
-                            <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[16/9] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
-                                <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                     src="{{ $project->image_url }}"/>
-                                <div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6 sm:p-8">
-                                    <span class="text-white font-bold flex items-center gap-2">Explore Case Study <span class="material-symbols-outlined">arrow_outward</span></span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="text-xs font-label uppercase text-primary font-bold tracking-widest">{{ $project->category }} • {{ $project->year }}</span>
-                                    <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
-                                </div>
-                            </div>
-                        </a>
-                    @elseif($index === 1)
-                        <!-- Project 2: Vertical Side -->
-                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-4 group cursor-pointer block">
-                            <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[3/4] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
-                                <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                     src="{{ $project->image_url }}"/>
-                                <div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6 sm:p-8">
-                                    <span class="text-white font-bold flex items-center gap-2">Details <span class="material-symbols-outlined">arrow_outward</span></span>
-                                </div>
-                            </div>
-                            <span class="text-xs font-label uppercase text-primary font-bold tracking-widest">{{ $project->category }} • {{ $project->year }}</span>
-                            <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
-                        </a>
-                    @elseif($index === 2)
-                        <!-- Project 3: Wide Bottom -->
-                        <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target="_blank"' : '' }} class="md:col-span-12 group cursor-pointer block">
-                            <div class="relative overflow-hidden rounded-xl bg-surface-container-high aspect-[4/3] sm:aspect-[21/9] mb-4 sm:mb-6 shadow-ambient hover:shadow-ambient-hover transition-all duration-500">
-                                <img alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                     src="{{ $project->image_url }}"/>
-                                <div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6 sm:p-8">
-                                    <span class="text-white font-bold flex items-center gap-2">View Experience <span class="material-symbols-outlined">arrow_outward</span></span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="text-xs font-label uppercase text-primary font-bold tracking-widest">{{ $project->category }} • {{ $project->year }}</span>
-                                    <h3 class="font-headline text-xl sm:text-2xl font-extrabold mt-1 text-on-surface">{{ $project->title }}</h3>
-                                </div>
-                            </div>
-                        </a>
                     @endif
+                </div>
+                <h1 class="display tracking-tight" style="font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700;">
+                    {{ $settings['hero_title_2'] ?? ($settings['site_name'] ?? 'Fahmie Al Khudhorie') }}
+                </h1>
+            </div>
+
+            <p class="text-2xl sm:text-[1.75rem] leading-tight mb-7 animate-reveal delay-200 max-w-xl"
+                style="color: var(--color-ink); font-weight: 500; line-height: 1.25;">
+                {{ $settings['hero_subtitle'] ?? 'Design engineer building products at the intersection of UI, code, and craft.' }}
+            </p>
+
+            <div class="flex items-center gap-3 mb-9 animate-reveal delay-300 flex-wrap">
+                <a href="{{ route('contact') }}" class="btn btn-embossed">
+                    <span class="material-symbols-outlined text-[16px]">chat</span>
+                    Discuss a Project
+                </a>
+                <span class="status">
+                    <span class="status__dot"></span>
+                    Available
+                </span>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-12 animate-reveal delay-400">
+                <span class="chip"><span class="material-symbols-outlined text-[14px]"
+                        style="color: var(--color-ink-4);">language</span> Web Design</span>
+                <span class="chip"><span class="material-symbols-outlined text-[14px]"
+                        style="color: var(--color-ink-4);">design_services</span> Figma</span>
+                <span class="chip"><span class="material-symbols-outlined text-[14px]"
+                        style="color: var(--color-ink-4);">edit_note</span> Copywriting</span>
+                <span class="chip"><span class="material-symbols-outlined text-[14px]"
+                        style="color: var(--color-ink-4);">brush</span> Graphic Design</span>
+                <span class="chip"><span class="material-symbols-outlined text-[14px]"
+                        style="color: var(--color-ink-4);">code</span> Front-end</span>
+            </div>
+
+            <div class="surface p-6 sm:p-7 animate-reveal delay-500" data-reveal>
+                <p class="text-sm sm:text-[15px] leading-relaxed italic" style="color: var(--color-ink-3);">
+                    ""Manusia yang paling dicintai oleh Allah adalah yang paling memberikan manfaat bagi manusia
+                    lainnya."
+                </p>
+                <div class="flex items-center gap-3 mt-5">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                        style="background: linear-gradient(135deg, #2563eb, #7c3aed); font-size: 14px;">
+                        HR
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold" style="color: var(--color-ink);">(HR. Thabrani)</p>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- RIGHT --}}
+        <aside class="lg:col-span-5 space-y-4 lg:space-y-5">
+            @foreach ($featuredProjects->take(3) as $i => $project)
+                <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target=_blank rel=noopener' : '' }}
+                    class="block group animate-reveal" style="animation-delay: {{ 300 + $i * 100 }}ms;">
+                    <div class="surface overflow-hidden">
+                        <div class="aspect-[4/3] overflow-hidden" style="background: var(--color-card-soft);">
+                            <img src="{{ $project->image_url }}" alt="{{ $project->title }}"
+                                class="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-500 ease-out"
+                                loading="lazy" />
+                        </div>
+                        <div class="px-5 py-4 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-mono uppercase tracking-widest mb-0.5"
+                                    style="color: var(--color-ink-5);">
+                                    {{ $project->category }} · {{ $project->year }}
+                                </p>
+                                <h3 class="text-base font-semibold truncate" style="color: var(--color-ink);">
+                                    {{ $project->title }}
+                                </h3>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-[16px] shrink-0 group-hover:translate-x-0.5 transition-transform"
+                                style="color: var(--color-ink-4);">arrow_outward</span>
+                        </div>
+                    </div>
+                </a>
+            @endforeach
+        </aside>
+    </section>
+
+    {{-- ============================================
+         02 — GITHUB CONTRIBUTIONS
+    ============================================ --}}
+    <div class="section">
+        <x-github-heatmap :username="$settings['github_username'] ?? null" />
+    </div>
+
+    {{-- ============================================
+         03 — TOOLS I USE (fan stack)
+    ============================================ --}}
+    @if ($tools->count() > 0)
+        <section class="section" data-reveal>
+            <div class="section-title">
+                <h2>Tools I Use</h2>
+                <p>My favorite stack for designing and building digital experiences.</p>
+            </div>
+
+            <div class="tool-fan">
+                @foreach ($tools as $tool)
+                    <div class="tool-fan-slot" tabindex="0" aria-label="{{ $tool->name }}">
+                        <div class="tool-fan-card">
+                            <div class="tool-fan-card__icon" style="background: {{ $tool->gradient }};">
+                                @if ($tool->icon_url)
+                                    <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}"
+                                        class="w-8 h-8 md:w-[38px] md:h-[38px] object-contain" />
+                                @elseif($tool->icon_svg)
+                                    {!! $tool->icon_svg !!}
+                                @else
+                                    <span class="material-symbols-outlined"
+                                        style="color: white; font-size: 28px;">apps</span>
+                                @endif
+                            </div>
+                            <span class="tool-fan-card__label">{{ $tool->name }}</span>
+                        </div>
+                    </div>
                 @endforeach
             </div>
-        </div>
-    </section>
+        </section>
+    @endif
 
-    <!-- CTA Section -->
-    <section class="py-16 sm:py-24 px-4 sm:px-6 md:px-12">
-        <div class="container mx-auto">
-            <div class="bg-primary-container rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-24 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none hidden sm:block">
-                    <span class="font-headline text-[12rem] sm:text-[20rem] font-black leading-none select-none">NEXT</span>
-                </div>
-                <div class="relative z-10 max-w-2xl">
-                    <h2 class="font-headline text-3xl sm:text-4xl md:text-6xl font-black text-white mb-6 sm:mb-8 leading-tight">Ready to build your masterpiece?</h2>
-                    <p class="text-white/80 text-base sm:text-lg mb-8 sm:mb-12 font-body">Let's collaborate on a project that challenges the status quo and leaves a lasting legacy.</p>
-                    <a href="{{ route('contact') }}" class="bg-white text-primary px-8 sm:px-12 py-4 sm:py-5 rounded-xl font-black text-lg sm:text-xl hover:scale-105 active:scale-95 transition-all duration-300 inline-block">
-                        Start a Project
+    {{-- ============================================
+         04 — ABOUT ME
+    ============================================ --}}
+    <section class="section" data-reveal>
+        <div class="surface-cream surface-massive p-8 sm:p-12 lg:p-16">
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+                <div class="lg:col-span-7">
+                    <p class="eyebrow mb-4">About Me</p>
+                    <h2 class="display display--lg mb-6 leading-tight"
+                        style="font-size: clamp(1.5rem, 3.5vw, 2.25rem);">
+                        Design is how I solve problems and create impact.
+                    </h2>
+                    <p class="lede mb-6">
+                        {{ $settings['about_text_1'] ?? "I'm a multidisciplinary designer who loves crafting meaningful and functional digital experiences." }}
+                    </p>
+                    <a href="{{ route('contact') }}" class="btn btn-embossed">
+                        Work With Me
+                        <span class="material-symbols-outlined text-[16px]">arrow_outward</span>
                     </a>
                 </div>
+
+                <aside class="lg:col-span-5 space-y-3">
+                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
+                        style="border: 1px solid var(--color-line);">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                            style="background: rgba(245,158,11,0.12); color: #b45309;">
+                            <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold" style="color: var(--color-ink);">
+                                {{ $settings['about_page_years'] ?? '5+' }} Years of Experience</p>
+                            <p class="text-xs mt-0.5" style="color: var(--color-ink-4);">Working with brands &
+                                products
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
+                        style="border: 1px solid var(--color-line);">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                            style="background: rgba(37,99,235,0.10); color: #1d4ed8;">
+                            <span class="material-symbols-outlined text-[22px]">location_on</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold" style="color: var(--color-ink);">Based in Indonesia
+                            </p>
+                            <p class="text-xs mt-0.5" style="color: var(--color-ink-4);">Working remotely
+                                worldwide
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
+                        style="border: 1px solid var(--color-line);">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                            style="background: rgba(16,185,129,0.12); color: #047857;">
+                            <span class="material-symbols-outlined text-[22px]">handshake</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold" style="color: var(--color-ink);">Available for
+                                Freelance
+                            </p>
+                            <p class="text-xs mt-0.5" style="color: var(--color-ink-4);">Selectively taking new
+                                projects</p>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </section>
-
-    {{-- Typewriter CSS --}}
-    <style>
-        .hero-typewriter-wrapper {
-            display: inline-flex;
-            align-items: baseline;
-            min-height: 1.1em;
-        }
-
-        .hero-cursor {
-            display: inline-block;
-            width: 4px;
-            height: 0.85em;
-            background: linear-gradient(to bottom, var(--md-sys-color-primary), var(--md-sys-color-secondary));
-            margin-left: 4px;
-            border-radius: 2px;
-            animation: cursorBlink 0.7s ease-in-out infinite;
-            vertical-align: baseline;
-            position: relative;
-            top: 0.05em;
-        }
-
-        @keyframes cursorBlink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-    </style>
-
-    {{-- Typewriter Script --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const words = [
-                @json($settings['hero_title_highlight'] ?? 'Stories.'),
-                @json($settings['hero_title_highlight_2'] ?? 'a Vibe Coder.'),
-                @json($settings['hero_title_highlight_3'] ?? 'A Head Master.')
-            ];
-
-            const el = document.getElementById('hero-typewriter');
-            if (!el) return;
-
-            let wordIndex = 0;
-            const typeSpeed = 100;      // ms per character typing
-            const eraseSpeed = 60;      // ms per character erasing
-            const holdDelay = 2500;     // ms to hold the completed word
-            const nextWordDelay = 500;  // ms pause before typing next word
-
-            function typeWord(word, charIndex, callback) {
-                if (charIndex <= word.length) {
-                    el.textContent = word.substring(0, charIndex);
-                    setTimeout(() => typeWord(word, charIndex + 1, callback), typeSpeed);
-                } else {
-                    setTimeout(callback, holdDelay);
-                }
-            }
-
-            function eraseWord(callback) {
-                const currentText = el.textContent;
-                if (currentText.length > 0) {
-                    el.textContent = currentText.substring(0, currentText.length - 1);
-                    setTimeout(() => eraseWord(callback), eraseSpeed);
-                } else {
-                    setTimeout(callback, nextWordDelay);
-                }
-            }
-
-            function loop() {
-                const word = words[wordIndex];
-                typeWord(word, 0, function () {
-                    eraseWord(function () {
-                        wordIndex = (wordIndex + 1) % words.length;
-                        loop();
-                    });
-                });
-            }
-
-            loop();
-        });
-    </script>
 
 </x-layouts.frontend>

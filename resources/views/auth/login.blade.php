@@ -1,54 +1,85 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login | {{ config('app.name') }}</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;800;900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f3f4f6" />
+    <title>Sign in — {{ config('app.name') }}</title>
+
+    @php $favicon = \App\Models\SiteSetting::get('site_favicon', ''); @endphp
+    @if ($favicon)
+        <link rel="icon" type="image/png" href="{{ $favicon }}" />
+        <link rel="apple-touch-icon" href="{{ $favicon }}" />
+    @endif
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-surface text-on-surface antialiased min-h-screen flex items-center justify-center px-6">
-    <div class="w-full max-w-md">
-        <div class="text-center mb-10">
-            <a href="{{ route('home') }}" class="text-2xl font-black font-headline text-on-surface">My Portofolio</a>
-            <p class="text-on-surface-variant mt-2">Sign in to your admin panel</p>
+
+<body class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-[440px]">
+        <div class="text-center mb-8 animate-reveal delay-100">
+            <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5">
+                <div class="brand-mark__avatar">
+                    <div class="w-full h-full flex items-center justify-center font-bold"
+                        style="background: var(--color-card-soft); color: var(--color-ink);">
+                        {{ strtoupper(substr(config('app.name'), 0, 1)) }}
+                    </div>
+                </div>
+                <span class="font-semibold text-base" style="color: var(--color-ink);">{{ config('app.name') }}</span>
+            </a>
+            <p class="micro mt-3">Studio Panel</p>
         </div>
 
-        <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-ambient">
-            @if($errors->any())
-                <div class="mb-6 bg-error/10 text-error p-4 rounded-xl text-sm font-medium">
-                    {{ $errors->first() }}
+        <div class="surface p-8 sm:p-10 animate-reveal delay-200">
+            <h1 class="display display--md mb-2">Welcome back.</h1>
+            <p class="text-sm mb-7" style="color: var(--color-ink-4);">Sign in to manage your studio.</p>
+
+            @if ($errors->any())
+                <div class="rounded-lg p-3 mb-5 text-sm border"
+                    style="background: var(--color-error-container); color: var(--color-on-error-container); border-color: rgba(185,28,28,0.2);">
+                    — {{ $errors->first() }}
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+            <form method="POST" action="{{ route('login') }}">
                 @csrf
-                <div>
-                    <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Email</label>
-                    <input name="email" type="email" value="{{ old('email') }}" required autofocus
-                           class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
+                <div class="field">
+                    <label class="field-label" for="login-email">Email</label>
+                    <input id="login-email" name="email" type="email" value="{{ old('email') }}"
+                        class="field-input" required autofocus autocomplete="email" placeholder="you@studio.com" />
                 </div>
-                <div>
-                    <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Password</label>
-                    <input name="password" type="password" required
-                           class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
+                <div class="field">
+                    <label class="field-label" for="login-password">Password</label>
+                    <input id="login-password" name="password" type="password" class="field-input" required
+                        autocomplete="current-password" placeholder="••••••••" />
                 </div>
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input name="remember" type="checkbox" class="w-4 h-4 rounded text-primary focus:ring-primary/20"/>
-                    <span class="text-sm text-on-surface-variant">Remember me</span>
+
+                <label class="flex items-center gap-2 cursor-pointer select-none mb-6 mt-2">
+                    <input name="remember" type="checkbox" class="w-4 h-4 rounded" />
+                    <span class="text-sm" style="color: var(--color-ink-3);">Remember me on this device</span>
                 </label>
-                <button type="submit" class="w-full btn-primary-gradient px-6 py-4 rounded-xl font-headline font-bold text-lg">
-                    Sign In
+
+                <button type="submit" class="btn btn-embossed w-full">
+                    Sign in
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
             </form>
         </div>
 
-        <p class="text-center text-outline text-sm mt-8">
-            <a href="{{ route('home') }}" class="hover:text-primary transition-colors">← Back to website</a>
+        <p class="text-center mt-6">
+            <a href="{{ route('home') }}" class="inline-flex items-center gap-1 text-sm hover:underline"
+                style="color: var(--color-ink-4);">
+                <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+                Back to website
+            </a>
         </p>
     </div>
 </body>
+
 </html>

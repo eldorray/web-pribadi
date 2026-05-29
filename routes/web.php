@@ -20,6 +20,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('admin.dashboard');
     Route::get('/projects', \App\Livewire\Admin\Projects\Index::class)->name('admin.projects');
     Route::get('/skills', \App\Livewire\Admin\Skills\Index::class)->name('admin.skills');
+    Route::get('/tools', \App\Livewire\Admin\Tools\Index::class)->name('admin.tools');
     Route::get('/experiences', \App\Livewire\Admin\Experiences\Index::class)->name('admin.experiences');
     Route::get('/messages', \App\Livewire\Admin\Messages\Index::class)->name('admin.messages');
     Route::get('/settings', \App\Livewire\Admin\Settings\General::class)->name('admin.settings');

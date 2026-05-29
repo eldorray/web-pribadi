@@ -12,6 +12,7 @@
 /.vscode
 /.zed
 /auth.json
+/build
 /node_modules
 /public/build
 /public/hot
@@ -22,3 +23,14 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+
+# Kiro skills & generated artifacts
+/.agents
+/design-system
+/skills-lock.json
+
+# Misc accidental files
+/public/htaccess*dalem*public
+/public/htaccess*luar*public
+/public/images/inspire.jpeg

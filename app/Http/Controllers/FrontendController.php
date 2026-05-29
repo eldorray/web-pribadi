@@ -15,8 +15,9 @@ class FrontendController extends Controller
         $featuredProjects = Project::featured()->ordered()->take(3)->get();
         $settings = SiteSetting::pluck('value', 'key');
         $socialLinks = SocialLink::ordered()->get();
+        $tools = \App\Models\Tool::active()->ordered()->get();
 
-        return view('frontend.home', compact('featuredProjects', 'settings', 'socialLinks'));
+        return view('frontend.home', compact('featuredProjects', 'settings', 'socialLinks', 'tools'));
     }
 
     public function projects()

@@ -1,106 +1,118 @@
-<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" title="About | {{ $settings['site_name'] ?? 'My Portofolio' }}">
+<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" :title="'About — ' . ($settings['site_name'] ?? 'Studio')">
 
-    <div class="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
-        <!-- Hero Section: My Story -->
-        <section class="mb-24">
-            <div class="flex flex-col md:flex-row gap-16 items-center">
-                <div class="w-full md:w-1/2 relative group">
-                    <div class="absolute -inset-4 bg-primary/5 rounded-3xl -rotate-2 group-hover:rotate-0 transition-transform duration-500"></div>
-                    <div class="relative overflow-hidden rounded-2xl aspect-[4/5] bg-surface-container-low">
-                        <img alt="Professional portrait" class="w-full h-full object-cover"
-                             src="{{ $settings['about_page_portrait'] ?? '' }}"/>
+    {{-- HERO --}}
+    <section class="text-center pt-8 sm:pt-16 pb-8">
+        <div class="animate-reveal delay-150 inline-block mb-6">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto"
+                style="background: var(--color-card-soft); border: 4px solid #fff; box-shadow: var(--shadow-card), 0 0 0 1px var(--color-line);">
+                @if (!empty($settings['about_page_portrait']))
+                    <img src="{{ $settings['about_page_portrait'] }}" alt="Portrait" class="w-full h-full object-cover" />
+                @elseif(!empty($settings['about_portrait']))
+                    <img src="{{ $settings['about_portrait'] }}" alt="Portrait" class="w-full h-full object-cover" />
+                @else
+                    <div class="w-full h-full flex items-center justify-center text-2xl font-bold"
+                        style="color: var(--color-ink);">
+                        {{ strtoupper(substr($settings['site_name'] ?? 'M', 0, 1)) }}
                     </div>
+                @endif
+            </div>
+        </div>
+
+        <p class="eyebrow mb-3 animate-reveal delay-200">About Me</p>
+        <h1 class="display display--xl max-w-3xl mx-auto mb-4 animate-reveal delay-250"
+            style="font-size: clamp(2rem, 5vw, 3rem);">
+            {{ $settings['site_name'] ?? 'Hello, I make digital things.' }}
+        </h1>
+        <p class="lede max-w-2xl mx-auto animate-reveal delay-300">
+            {{ $settings['about_page_intro'] ?? 'Designer & developer based in Indonesia. I help brands and products connect with their audience through thoughtful, functional design.' }}
+        </p>
+    </section>
+
+    {{-- BIO --}}
+    <section class="section !mt-12" data-reveal>
+        <div class="surface p-8 sm:p-12 max-w-3xl mx-auto">
+            <p class="lede mb-5">
+                {{ $settings['about_page_bio'] ?? "Over the last several years, I've partnered with forward-thinking brands to translate complex problems into elegant, editorial-grade digital solutions. I believe every pixel should serve a purpose and every interaction should tell a story." }}
+            </p>
+            <p class="lede">
+                {{ $settings['about_text_2'] ?? 'Outside of client work I keep notebooks, take photos, and drink too much coffee. The work below is a tiny window into all of that.' }}
+            </p>
+        </div>
+    </section>
+
+    {{-- STATS --}}
+    <section class="section" data-reveal>
+        <div class="grid grid-cols-3 gap-3 sm:gap-5 max-w-4xl mx-auto">
+            <div class="surface p-5 sm:p-8 text-center">
+                <p class="display display--lg" style="font-size: clamp(1.75rem, 4vw, 2.5rem);">
+                    {{ $settings['about_page_years'] ?? '5+' }}</p>
+                <p class="micro mt-2">Years Experience</p>
+            </div>
+            <div class="surface p-5 sm:p-8 text-center">
+                <p class="display display--lg" style="font-size: clamp(1.75rem, 4vw, 2.5rem);">
+                    {{ $settings['about_page_projects'] ?? '50+' }}</p>
+                <p class="micro mt-2">Projects Shipped</p>
+            </div>
+            <div class="surface p-5 sm:p-8 text-center">
+                <p class="display display--lg" style="font-size: clamp(1.75rem, 4vw, 2.5rem);">
+                    {{ $settings['stat_3_value'] ?? '09' }}</p>
+                <p class="micro mt-2">{{ $settings['stat_3_label'] ?? 'Cities' }}</p>
+            </div>
+        </div>
+    </section>
+
+    {{-- SKILLS --}}
+    <section class="section" data-reveal>
+        <div class="section-title">
+            <p class="eyebrow mb-3">Toolkit</p>
+            <h2>What I Do Best</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            @foreach ($skills ?? collect() as $skill)
+                <div class="surface p-6">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                        style="background: rgba(17,24,39,0.06); color: var(--color-ink);">
+                        <span class="material-symbols-outlined text-[20px]">{{ $skill->icon }}</span>
+                    </div>
+                    <h3 class="text-base font-semibold text-ink mb-2" style="color: var(--color-ink);">
+                        {{ $skill->title }}</h3>
+                    <p class="text-sm leading-relaxed" style="color: var(--color-ink-4);">{{ $skill->description }}</p>
                 </div>
-                <div class="w-full md:w-1/2">
-                    <span class="font-label text-primary font-bold tracking-[0.2em] text-xs uppercase mb-3 sm:mb-4 block">Introduction</span>
-                    <h1 class="font-headline text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter text-on-surface mb-6 sm:mb-8 leading-tight">My Story.</h1>
-                    <div class="space-y-4 sm:space-y-6 text-on-surface-variant font-body text-base sm:text-lg leading-relaxed">
-                        <p>{{ $settings['about_page_intro'] ?? '' }}</p>
-                        <p>{{ $settings['about_page_bio'] ?? '' }}</p>
-                        <div class="pt-4 flex gap-4">
-                            <div class="flex flex-col">
-                                <span class="text-3xl font-bold text-on-surface">{{ $settings['about_page_years'] ?? '12+' }}</span>
-                                <span class="text-xs font-label uppercase text-outline">Years Experience</span>
-                            </div>
-                            <div class="w-px h-12 bg-surface-container-high mx-4"></div>
-                            <div class="flex flex-col">
-                                <span class="text-3xl font-bold text-on-surface">{{ $settings['about_page_projects'] ?? '150+' }}</span>
-                                <span class="text-xs font-label uppercase text-outline">Projects Delivered</span>
-                            </div>
-                        </div>
+            @endforeach
+        </div>
+    </section>
+
+    {{-- TRAJECTORY --}}
+    <section class="section" data-reveal>
+        <div class="section-title">
+            <p class="eyebrow mb-3">Trajectory</p>
+            <h2>Where I've Been</h2>
+        </div>
+
+        <div class="surface p-6 sm:p-10 max-w-3xl mx-auto">
+            @foreach ($experiences ?? collect() as $i => $exp)
+                <div class="row">
+                    <span class="row__num">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</span>
+                    <div class="row__title">
+                        <strong>{{ $exp->title }}</strong>
+                        <span style="color: var(--color-ink-4);">at {{ $exp->company }}</span>
                     </div>
+                    <span class="row__meta">{{ $exp->start_year }} — {{ $exp->end_year }}</span>
                 </div>
-            </div>
-        </section>
+            @endforeach
+        </div>
+    </section>
 
-        <!-- Skills Section: Bento Grid Layout -->
-        <section class="mb-20 sm:mb-32">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-12 gap-4">
-                <h2 class="font-headline text-3xl sm:text-4xl font-bold tracking-tight">Core Expertise</h2>
-                <div class="h-px flex-grow mx-8 bg-surface-container-high hidden md:block"></div>
-                <span class="font-label text-sm text-outline hidden sm:block">Capabilities</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-                @foreach($skills as $skill)
-                    @if($skill->is_wide)
-                        <div class="sm:col-span-2 bg-surface-container-low p-6 sm:p-8 rounded-2xl transition-all hover:bg-surface-container-lowest hover:shadow-xl hover:shadow-primary/5 group">
-                    @else
-                        <div class="bg-surface-container-low p-6 sm:p-8 rounded-2xl transition-all hover:bg-surface-container-lowest hover:shadow-xl hover:shadow-primary/5 group">
-                    @endif
-                        <div class="bg-{{ $skill->color }}/10 text-{{ $skill->color }} w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined">{{ $skill->icon }}</span>
-                        </div>
-                        <h3 class="font-headline text-xl font-bold mb-2">{{ $skill->title }}</h3>
-                        <p class="text-on-surface-variant text-sm leading-relaxed">{{ $skill->description }}</p>
-                    </div>
-                @endforeach
-                <!-- Problem Solving at Scale (static accent card) -->
-                <div class="sm:col-span-2 md:col-span-3 bg-primary-container p-6 sm:p-8 rounded-2xl text-on-primary-container relative overflow-hidden group">
-                    <div class="relative z-10">
-                        <h3 class="font-headline text-2xl font-bold mb-4">Problem Solving at Scale</h3>
-                        <p class="text-on-primary-container/80 max-w-xl text-lg">My approach combines data-driven insights with aesthetic intuition to build products that don't just work—they resonate.</p>
-                    </div>
-                    <span class="material-symbols-outlined absolute -right-8 -bottom-8 text-[12rem] opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-700">lightbulb</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Experience/Education Section: Tonal Timeline -->
-        <section class="mb-20 sm:mb-32">
-            <h2 class="font-headline text-3xl sm:text-4xl font-bold tracking-tight mb-10 sm:mb-16 text-center">Trajectory</h2>
-            <div class="max-w-4xl mx-auto space-y-4">
-                @foreach($experiences as $experience)
-                    <div class="group relative bg-surface-container-low hover:bg-surface-container-lowest p-6 sm:p-8 rounded-2xl sm:rounded-3xl transition-all duration-300">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div class="flex items-center gap-6">
-                                <div class="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-{{ $experience->color }}">
-                                    <span class="material-symbols-outlined">{{ $experience->icon }}</span>
-                                </div>
-                                <div>
-                                    <h4 class="font-headline text-xl font-bold text-on-surface">{{ $experience->title }}</h4>
-                                    <p class="text-on-surface-variant">{{ $experience->company }}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="bg-{{ $experience->color }}/10 text-{{ $experience->color }} px-4 py-1.5 rounded-full text-xs font-bold font-label">{{ $experience->year_range }}</span>
-                            </div>
-                        </div>
-                        <p class="mt-4 sm:mt-6 text-on-surface-variant leading-relaxed text-sm">{{ $experience->description }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="rounded-2xl sm:rounded-[3rem] bg-on-surface text-surface py-12 sm:py-20 px-6 sm:px-8 text-center overflow-hidden relative">
-            <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-                <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
-            </div>
-            <h2 class="font-headline text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 sm:mb-8 relative z-10">Let's build something<br/>unforgettable together.</h2>
-            <a href="{{ route('contact') }}" class="bg-primary hover:bg-primary-container text-white px-8 sm:px-10 py-4 sm:py-5 rounded-full font-bold text-base sm:text-lg transition-all hover:scale-105 active:scale-95 relative z-10 inline-block">
-                Start a Conversation
+    {{-- CTA --}}
+    <section class="section" data-reveal>
+        <div class="surface surface-massive p-8 sm:p-14 text-center">
+            <h2 class="display display--lg mb-4">Let's build something together.</h2>
+            <a href="{{ route('contact') }}" class="btn btn-embossed btn-lg mt-3">
+                Discuss a Project
+                <span class="material-symbols-outlined text-[16px]">arrow_outward</span>
             </a>
-        </section>
-    </div>
+        </div>
+    </section>
 
 </x-layouts.frontend>

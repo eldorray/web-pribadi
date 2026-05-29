@@ -1,46 +1,67 @@
 <div>
-    @if($submitted)
-        <div class="text-center py-16">
-            <span class="material-symbols-outlined text-6xl text-primary mb-4 block" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-            <h3 class="font-headline text-2xl font-bold mb-2">Message Sent!</h3>
-            <p class="text-on-surface-variant">Thank you for reaching out. I'll get back to you within 24-48 hours.</p>
-            <button wire:click="$set('submitted', false)" class="mt-6 text-primary font-bold hover:underline">Send another message</button>
+    @if ($submitted)
+        <div class="text-center py-8">
+            <div class="inline-flex w-14 h-14 rounded-full items-center justify-center mb-5"
+                style="background: rgba(16,185,129,0.12); color: #047857;">
+                <span class="material-symbols-outlined"
+                    style="font-variation-settings: 'FILL' 1; font-size: 26px;">check</span>
+            </div>
+            <h3 class="display display--md mb-2">Message sent.</h3>
+            <p class="text-sm mb-6 max-w-sm mx-auto" style="color: var(--color-ink-4);">
+                Thanks for writing in. I'll be in touch within a couple of business days.
+            </p>
+            <button wire:click="$set('submitted', false)" class="btn btn-light">
+                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                Send another
+            </button>
         </div>
     @else
-        <form wire:submit="submit" class="space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-2">
-                    <label class="font-label text-xs uppercase tracking-widest text-outline font-bold">Name</label>
-                    <input wire:model="name" type="text" placeholder="I.M. Pei"
-                           class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
-                    @error('name') <span class="text-error text-xs">{{ $message }}</span> @enderror
+        <form wire:submit="submit">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="field !mb-0">
+                    <label class="field-label" for="cf-name">Name</label>
+                    <input id="cf-name" wire:model="name" type="text" placeholder="Your name" class="field-input"
+                        autocomplete="name" />
+                    @error('name')
+                        <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
+                    @enderror
                 </div>
-                <div class="space-y-2">
-                    <label class="font-label text-xs uppercase tracking-widest text-outline font-bold">Email</label>
-                    <input wire:model="email" type="email" placeholder="hello@My Portofolio"
-                           class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
-                    @error('email') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                <div class="field !mb-0">
+                    <label class="field-label" for="cf-email">Email</label>
+                    <input id="cf-email" wire:model="email" type="email" placeholder="you@studio.com"
+                        class="field-input" autocomplete="email" />
+                    @error('email')
+                        <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
+                    @enderror
                 </div>
             </div>
-            <div class="space-y-2">
-                <label class="font-label text-xs uppercase tracking-widest text-outline font-bold">Subject</label>
-                <input wire:model="subject" type="text" placeholder="Project Inquiry"
-                       class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none"/>
-                @error('subject') <span class="text-error text-xs">{{ $message }}</span> @enderror
+
+            <div class="field mt-4">
+                <label class="field-label" for="cf-subject">Subject</label>
+                <input id="cf-subject" wire:model="subject" type="text" placeholder="What's this about?"
+                    class="field-input" />
+                @error('subject')
+                    <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
+                @enderror
             </div>
-            <div class="space-y-2">
-                <label class="font-label text-xs uppercase tracking-widest text-outline font-bold">Message</label>
-                <textarea wire:model="message" placeholder="Tell me about your vision..." rows="6"
-                          class="w-full bg-surface-container-low border-none rounded-lg px-6 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none resize-none"></textarea>
-                @error('message') <span class="text-error text-xs">{{ $message }}</span> @enderror
+
+            <div class="field">
+                <label class="field-label" for="cf-message">Message</label>
+                <textarea id="cf-message" wire:model="message" rows="6"
+                    placeholder="Project, timeline, dreams, doubts — write freely." class="field-textarea"></textarea>
+                @error('message')
+                    <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
+                @enderror
             </div>
-            <button type="submit"
-                    class="w-full md:w-auto btn-primary-gradient px-10 py-5 rounded-xl font-headline text-lg font-bold flex items-center justify-center gap-3"
-                    wire:loading.attr="disabled">
-                <span wire:loading.remove>Send Message</span>
-                <span wire:loading>Sending...</span>
-                <span class="material-symbols-outlined" wire:loading.remove>send</span>
-            </button>
+
+            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
+                <p class="micro">Required · Won't be shared</p>
+                <button type="submit" class="btn btn-embossed" wire:loading.attr="disabled">
+                    <span wire:loading.remove>Send Message</span>
+                    <span wire:loading>Sending…</span>
+                    <span class="material-symbols-outlined text-[16px]" wire:loading.remove>arrow_outward</span>
+                </button>
+            </div>
         </form>
     @endif
 </div>
