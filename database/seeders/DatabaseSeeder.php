@@ -68,6 +68,8 @@ class DatabaseSeeder extends Seeder
             // General
             ['key' => 'site_name', 'value' => 'My Portofolio', 'group' => 'general'],
             ['key' => 'site_tagline', 'value' => 'Crafting meaningful architecture through editorial design and intentional minimalism.', 'group' => 'general'],
+            ['key' => 'github_username', 'value' => '', 'group' => 'general'],
+            ['key' => 'site_favicon', 'value' => '', 'type' => 'image', 'group' => 'general'],
         ];
 
         foreach ($settings as $setting) {
