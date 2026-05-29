@@ -7,7 +7,7 @@
 @endphp
 
 @if ($username)
-    <section class="surface p-6 sm:p-10" data-reveal>
+    <section class="surface p-5 sm:p-8 lg:p-10" data-reveal>
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
             <div>
                 <h2 class="display display--md mb-1" style="font-size: 1.375rem; font-weight: 700;">

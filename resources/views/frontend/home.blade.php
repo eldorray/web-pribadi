@@ -7,7 +7,7 @@
 
         {{-- LEFT --}}
         <div class="lg:col-span-7">
-            <div class="flex items-center gap-4 mb-6 animate-reveal delay-150">
+            <div class="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6 animate-reveal delay-150">
                 <div class="avatar-tile">
                     @if (!empty($settings['about_portrait']))
                         <img src="{{ $settings['about_portrait'] }}" alt="Avatar" />
@@ -18,13 +18,13 @@
                         </div>
                     @endif
                 </div>
-                <h1 class="display tracking-tight" style="font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700;">
+                <h1 class="display tracking-tight" style="font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 700;">
                     {{ $settings['hero_title_2'] ?? ($settings['site_name'] ?? 'Fahmie Al Khudhorie') }}
                 </h1>
             </div>
 
-            <p class="text-2xl sm:text-[1.75rem] leading-tight mb-7 animate-reveal delay-200 max-w-xl"
-                style="color: var(--color-ink); font-weight: 500; line-height: 1.25;">
+            <p class="text-xl sm:text-[1.75rem] leading-snug mb-7 animate-reveal delay-200 max-w-xl"
+                style="color: var(--color-ink); font-weight: 500;">
                 {{ $settings['hero_subtitle'] ?? 'Design engineer building products at the intersection of UI, code, and craft.' }}
             </p>
 
@@ -39,11 +39,11 @@
                 </span>
             </div>
 
-            <div class="flex flex-wrap gap-2 mb-12 animate-reveal delay-400">
+            <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-10 sm:mb-12 animate-reveal delay-400">
                 <span class="chip"><span class="material-symbols-outlined text-[14px]"
                         style="color: var(--color-ink-4);">language</span> Web Design</span>
                 <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">design_services</span> Figma</span>
+                        style="color: var(--color-ink-4);">design_services</span> Vibe Code</span>
                 <span class="chip"><span class="material-symbols-outlined text-[14px]"
                         style="color: var(--color-ink-4);">edit_note</span> Copywriting</span>
                 <span class="chip"><span class="material-symbols-outlined text-[14px]"
@@ -52,7 +52,7 @@
                         style="color: var(--color-ink-4);">code</span> Front-end</span>
             </div>
 
-            <div class="surface p-6 sm:p-7 animate-reveal delay-500" data-reveal>
+            <div class="surface p-5 sm:p-7 animate-reveal delay-500" data-reveal>
                 <p class="text-sm sm:text-[15px] leading-relaxed italic" style="color: var(--color-ink-3);">
                     ""Manusia yang paling dicintai oleh Allah adalah yang paling memberikan manfaat bagi manusia
                     lainnya."
@@ -81,13 +81,14 @@
                                 class="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-500 ease-out"
                                 loading="lazy" />
                         </div>
-                        <div class="px-5 py-4 flex items-center justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-[11px] font-mono uppercase tracking-widest mb-0.5"
+                        <div class="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest mb-0.5"
                                     style="color: var(--color-ink-5);">
                                     {{ $project->category }} · {{ $project->year }}
                                 </p>
-                                <h3 class="text-base font-semibold truncate" style="color: var(--color-ink);">
+                                <h3 class="text-sm sm:text-base font-semibold truncate"
+                                    style="color: var(--color-ink);">
                                     {{ $project->title }}
                                 </h3>
                             </div>
@@ -145,8 +146,8 @@
          04 — ABOUT ME
     ============================================ --}}
     <section class="section" data-reveal>
-        <div class="surface-cream surface-massive p-8 sm:p-12 lg:p-16">
-            <div class="grid lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+        <div class="surface-cream surface-massive p-6 sm:p-10 lg:p-16">
+            <div class="grid lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16 items-start">
                 <div class="lg:col-span-7">
                     <p class="eyebrow mb-4">About Me</p>
                     <h2 class="display display--lg mb-6 leading-tight"

@@ -25,16 +25,27 @@
     @livewireStyles
 </head>
 
-<body class="paper">
+<body class="paper" x-data="{ sidebarOpen: false }">
     <div class="flex min-h-screen">
-        {{-- Sidebar --}}
-        <aside class="admin-sidebar w-64 fixed top-0 left-0 h-full z-40 flex-col p-5 hidden lg:flex">
-            <a href="{{ route('admin.dashboard') }}" class="brand mb-8">
-                {{ config('app.name') }}
-                <small>Admin</small>
-            </a>
+        {{-- Mobile drawer overlay --}}
+        <div x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false"
+            class="fixed inset-0 bg-black/40 z-30 lg:hidden" style="display: none;"></div>
 
-            <nav class="flex flex-col gap-1 flex-1">
+        {{-- Sidebar (mobile drawer + desktop static) --}}
+        <aside
+            class="admin-sidebar w-64 fixed top-0 left-0 h-full z-40 flex flex-col p-5 transition-transform lg:transform-none"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+            <div class="flex items-center justify-between mb-8">
+                <a href="{{ route('admin.dashboard') }}" class="brand">
+                    {{ config('app.name') }}
+                    <small>Admin</small>
+                </a>
+                <button @click="sidebarOpen = false" class="lg:hidden p-1 -mr-1" aria-label="Close menu">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <nav class="flex flex-col gap-1 flex-1 overflow-y-auto">
                 <a href="{{ route('admin.dashboard') }}"
                     class="admin-sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <span class="material-symbols-outlined text-[20px]">dashboard</span>
@@ -101,25 +112,34 @@
         </aside>
 
         {{-- Main --}}
-        <div class="flex-1 lg:ml-64 w-full">
+        <div class="flex-1 lg:ml-64 w-full min-w-0">
             <header
-                class="bg-card border-b border-line px-5 lg:px-8 py-4 flex justify-between items-center sticky top-0 z-30"
+                class="bg-card border-b border-line px-4 sm:px-5 lg:px-8 py-3 sm:py-4 flex justify-between items-center sticky top-0 z-20"
                 style="background: var(--color-card);">
-                <h1 class="display display--md !text-xl">{{ $pageTitle ?? 'Dashboard' }}</h1>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <button @click="sidebarOpen = true" class="lg:hidden p-1 -ml-1 shrink-0" aria-label="Open menu">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="display display--md !text-base sm:!text-xl truncate">{{ $pageTitle ?? 'Dashboard' }}
+                    </h1>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                     <span class="micro hidden sm:inline">{{ auth()->user()->name ?? 'Admin' }}</span>
-                    <div class="w-8 h-8 rounded-full bg-ink flex items-center justify-center text-white text-sm font-bold"
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
                         style="background: var(--color-ink);">
                         {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                     </div>
                 </div>
             </header>
 
-            <main class="p-5 lg:p-8 pb-20 lg:pb-8">
+            <main class="p-4 sm:p-5 lg:p-8 pb-20 lg:pb-8">
                 {{ $slot }}
             </main>
         </div>
     </div>
+
+    {{-- Alpine.js for sidebar toggle --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @livewireScripts
 </body>

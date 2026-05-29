@@ -30,7 +30,7 @@
 
     {{-- BIO --}}
     <section class="section !mt-12" data-reveal>
-        <div class="surface p-8 sm:p-12 max-w-3xl mx-auto">
+        <div class="surface p-5 sm:p-8 lg:p-12 max-w-3xl mx-auto">
             <p class="lede mb-5">
                 {{ $settings['about_page_bio'] ?? "Over the last several years, I've partnered with forward-thinking brands to translate complex problems into elegant, editorial-grade digital solutions. I believe every pixel should serve a purpose and every interaction should tell a story." }}
             </p>
@@ -90,7 +90,7 @@
             <h2>Where I've Been</h2>
         </div>
 
-        <div class="surface p-6 sm:p-10 max-w-3xl mx-auto">
+        <div class="surface p-5 sm:p-8 lg:p-10 max-w-3xl mx-auto">
             @foreach ($experiences ?? collect() as $i => $exp)
                 <div class="row">
                     <span class="row__num">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</span>

@@ -21,7 +21,7 @@
         <div class="grid lg:grid-cols-12 gap-5 max-w-5xl mx-auto">
             {{-- Form (8 cols) --}}
             <div class="lg:col-span-8">
-                <div class="surface p-6 sm:p-10">
+                <div class="surface p-5 sm:p-8 lg:p-10">
                     @livewire('contact-form')
                 </div>
             </div>
