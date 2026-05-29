@@ -30,8 +30,8 @@
         </div>
 
         @if ($data)
-            {{-- Heatmap --}}
-            <div class="overflow-x-auto scrollbar-hide -mx-2 px-2">
+            {{-- Heatmap (horizontal scroll on mobile) --}}
+            <div class="overflow-x-auto scrollbar-hide -mx-1 px-1" style="max-width: 100%;">
                 <div class="gh-heatmap">
                     <div class="gh-months">
                         @foreach ($data['months'] as $m)

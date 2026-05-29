@@ -103,6 +103,7 @@
 html {
     scroll-behavior: smooth;
     background: var(--color-page);
+    overflow-x: hidden;
 }
 
 body {
@@ -111,6 +112,8 @@ body {
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 ::selection {
@@ -147,11 +150,13 @@ body {
 
 .shell {
     max-width: 1280px;
+    width: 100%;
     margin: 0 auto;
     background: #ffffff;
     border-radius: 1.25rem;
     padding: 1rem 1rem 7rem; /* extra bottom padding for mobile dock */
     box-shadow: var(--shadow-soft), 0 0 0 1px var(--color-line);
+    overflow-x: clip; /* prevent horizontal overflow (tool fan / heatmap) */
 }
 
 @media (min-width: 640px) {
@@ -823,13 +828,16 @@ body {
     align-items: flex-end;
     padding: 1rem 0.5rem 3rem;
     min-height: 200px;
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 @media (min-width: 768px) {
     .tool-fan {
         padding: 1.5rem 1rem 4rem;
         min-height: 240px;
+        overflow: visible;
     }
 }
 
