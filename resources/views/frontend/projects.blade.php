@@ -15,12 +15,12 @@
         {{-- Filter chips --}}
         <div class="mt-6 sm:mt-8 chip-row animate-reveal delay-400">
             <a href="{{ route('projects') }}" class="chip"
-                style="{{ !request('category') ? 'background: var(--color-ink); color: #fff; border-color: var(--color-ink);' : '' }}">
+                style="{{ !request('category') ? 'background: var(--color-ink); color: var(--color-card); border-color: var(--color-ink);' : '' }}">
                 All · {{ $projects->count() }}
             </a>
             @foreach ($categories as $category)
                 <a href="{{ route('projects', ['category' => $category]) }}" class="chip"
-                    style="{{ request('category') === $category ? 'background: var(--color-ink); color: #fff; border-color: var(--color-ink);' : '' }}">
+                    style="{{ request('category') === $category ? 'background: var(--color-ink); color: var(--color-card); border-color: var(--color-ink);' : '' }}">
                     {{ $category }}
                 </a>
             @endforeach

@@ -4,7 +4,7 @@
     <section class="text-center pt-4 sm:pt-12 pb-6 sm:pb-8">
         <div class="animate-reveal delay-150 inline-block mb-5 sm:mb-6">
             <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden mx-auto"
-                style="background: var(--color-card-soft); border: 4px solid #fff; box-shadow: var(--shadow-card), 0 0 0 1px var(--color-line);">
+                style="background: var(--color-card-soft); border: 4px solid var(--color-card); box-shadow: var(--shadow-card), 0 0 0 1px var(--color-line);">
                 @if (!empty($settings['about_page_portrait']))
                     <img src="{{ $settings['about_page_portrait'] }}" alt="Portrait" class="w-full h-full object-cover" />
                 @elseif(!empty($settings['about_portrait']))
@@ -73,7 +73,7 @@
             @foreach ($skills ?? collect() as $skill)
                 <div class="surface p-5 sm:p-6">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                        style="background: rgba(17,24,39,0.06); color: var(--color-ink);">
+                        style="background: var(--color-line-soft); color: var(--color-ink);">
                         <span class="material-symbols-outlined text-[20px]">{{ $skill->icon }}</span>
                     </div>
                     <h3 class="text-base font-semibold text-ink mb-2" style="color: var(--color-ink);">

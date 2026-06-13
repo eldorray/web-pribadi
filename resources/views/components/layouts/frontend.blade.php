@@ -33,6 +33,21 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <meta name="color-scheme" content="light dark">
+    <script>
+        {
+            const savedTheme = localStorage.getItem('color-scheme') || 
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.querySelector('meta[name="color-scheme"]').content = 'dark';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.querySelector('meta[name="color-scheme"]').content = 'light';
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -43,22 +58,30 @@
             <header class="topbar animate-reveal delay-100">
                 <a href="{{ route('home') }}" class="brand-hola">{{ $settings['site_name'] ?? 'Hola!' }}</a>
 
-                {{-- Desktop nav --}}
-                <nav class="topnav hidden md:inline-flex" aria-label="Primary">
-                    <a href="{{ route('about') }}"
-                        class="topnav__link {{ request()->routeIs('about') ? 'is-active' : '' }}">About</a>
-                    <a href="{{ route('projects') }}"
-                        class="topnav__link {{ request()->routeIs('projects') ? 'is-active' : '' }}">Projects</a>
-                    <a href="{{ route('contact') }}"
-                        class="topnav__link {{ request()->routeIs('contact') ? 'is-active' : '' }}">Contact</a>
-                </nav>
+                <div class="flex items-center gap-3 sm:gap-4">
+                    {{-- Desktop nav --}}
+                    <nav class="topnav hidden md:inline-flex" aria-label="Primary">
+                        <a href="{{ route('about') }}"
+                            class="topnav__link {{ request()->routeIs('about') ? 'is-active' : '' }}">About</a>
+                        <a href="{{ route('projects') }}"
+                            class="topnav__link {{ request()->routeIs('projects') ? 'is-active' : '' }}">Projects</a>
+                        <a href="{{ route('contact') }}"
+                            class="topnav__link {{ request()->routeIs('contact') ? 'is-active' : '' }}">Contact</a>
+                    </nav>
 
-                {{-- Mobile: subtle availability indicator (nav handled by bottom dock) --}}
-                <span class="md:hidden inline-flex items-center gap-1.5 text-[11px] font-medium"
-                    style="color: var(--color-ink-4);">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: #10b981;"></span>
-                    Available
-                </span>
+                    {{-- Theme Toggle --}}
+                    <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+                        <span class="material-symbols-outlined theme-toggle-icon-dark" style="font-size: 20px;">dark_mode</span>
+                        <span class="material-symbols-outlined theme-toggle-icon-light" style="font-size: 20px;">light_mode</span>
+                    </button>
+
+                    {{-- Mobile: subtle availability indicator (nav handled by bottom dock) --}}
+                    <span class="md:hidden inline-flex items-center gap-1.5 text-[11px] font-medium"
+                        style="color: var(--color-ink-4);">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background: #10b981;"></span>
+                        Available
+                    </span>
+                </div>
             </header>
 
             {{ $slot }}
@@ -105,6 +128,34 @@
         </a>
     </nav>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    const theme = isDark ? 'dark' : 'light';
+                    localStorage.setItem('color-scheme', theme);
+                    
+                    const meta = document.querySelector('meta[name="color-scheme"]');
+                    if (meta) {
+                        meta.content = theme;
+                    }
+                });
+            }
+            
+            // Sync with system preferences dynamically if user hasn't explicitly set a preference
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('color-scheme')) {
+                    if (e.matches) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            });
+        });
+    </script>
     @livewireScripts
 </body>
 

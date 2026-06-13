@@ -1,3 +1,4 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400,300&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -6,7 +7,6 @@
 @source '../**/*.js';
 
 /* Satoshi via Fontshare (the typeface used by faizintifada.com) */
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400,300&display=swap');
 
 /* ========================================
    THE STUDIO — Design System
@@ -96,6 +96,72 @@
                             0 2px 4px rgba(0,0,0,0.20);
 }
 
+html.dark {
+    /* Surfaces — sleek dark mode, Slate-based */
+    --color-page: #0b0f19;
+    --color-canvas: #0b0f19;
+    --color-card: #151e2e;
+    --color-card-cream: #1e293b;
+    --color-card-cream-2: #111827;
+    --color-card-tint: #1e293b;
+    --color-card-soft: #0b0f19;
+
+    /* Ink (text) */
+    --color-ink: #f8fafc;
+    --color-ink-2: #f1f5f9;
+    --color-ink-3: #cbd5e1;
+    --color-ink-4: #94a3b8;
+    --color-ink-5: #64748b;
+    --color-ink-6: #475569;
+
+    /* Borders & lines */
+    --color-line: #1e293b;
+    --color-line-soft: #151e2e;
+    --color-line-faint: rgba(255, 255, 255, 0.03);
+
+    /* Aliases */
+    --color-primary: #f8fafc;
+    --color-on-primary: #0b0f19;
+    --color-secondary: #f1f5f9;
+    --color-on-secondary: #0b0f19;
+
+    --color-background: #0b0f19;
+    --color-on-background: #f8fafc;
+
+    --color-surface: #151e2e;
+    --color-surface-dim: #151e2e;
+    --color-surface-bright: #151e2e;
+    --color-surface-container-lowest: #0b0f19;
+    --color-surface-container-low: #151e2e;
+    --color-surface-container: #151e2e;
+    --color-surface-container-high: #151e2e;
+    --color-surface-container-highest: #151e2e;
+    --color-surface-variant: #1e293b;
+    --color-on-surface: #f8fafc;
+    --color-on-surface-variant: #cbd5e1;
+    --color-outline: #64748b;
+    --color-outline-variant: #1e293b;
+}
+
+html.dark .mobile-dock {
+    background: #151e2e;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    border: 1px solid #1e293b;
+}
+
+html.dark .dock-item {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+html.dark .dock-item:hover {
+    color: #fff;
+}
+
+html.dark .dock-item.is-active {
+    background: #fff;
+    color: #0b0f19;
+}
+
 /* ========================================
    Base
    ======================================== */
@@ -152,7 +218,7 @@ body {
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
-    background: #ffffff;
+    background: var(--color-card);
     border-radius: 1.25rem;
     padding: 1rem 1rem 7rem; /* extra bottom padding for mobile dock */
     box-shadow: var(--shadow-soft), 0 0 0 1px var(--color-line);
@@ -211,7 +277,7 @@ body {
     border-radius: 999px;
     overflow: hidden;
     background: var(--color-card);
-    border: 4px solid #ffffff;
+    border: 4px solid var(--color-card);
     box-shadow: var(--shadow-soft), 0 0 0 1px var(--color-line);
 }
 
@@ -248,10 +314,12 @@ body {
 }
 
 /* Simple top nav links */
-.topnav {
-    display: inline-flex;
-    align-items: center;
-    gap: 1.75rem;
+@media (min-width: 768px) {
+    .topnav {
+        display: inline-flex;
+        align-items: center;
+        gap: 1.75rem;
+    }
 }
 
 .topnav__link {
@@ -264,6 +332,41 @@ body {
 .topnav__link:hover { color: var(--color-ink); }
 
 .topnav__link.is-active { color: var(--color-ink); font-weight: 600; }
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-card);
+    color: var(--color-ink-3);
+    cursor: pointer;
+    transition: all 200ms ease;
+    box-shadow: var(--shadow-soft);
+    padding: 0;
+    margin: 0;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--color-ink);
+    border-color: var(--color-ink-6);
+    background: var(--color-card-soft);
+    transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle-icon-light { display: none; }
+.theme-toggle-icon-dark { display: block; }
+
+html.dark .theme-toggle-icon-light { display: block; }
+html.dark .theme-toggle-icon-dark { display: none; }
 
 /* ========================================
    Embossed (signature) Button
@@ -728,7 +831,7 @@ body {
 .field-input:focus,
 .field-textarea:focus {
     outline: none;
-    background: #fff;
+    background: var(--color-card);
     border-color: var(--color-ink);
     box-shadow: 0 0 0 4px rgba(17,24,39,0.06);
 }
@@ -835,7 +938,7 @@ body {
 .tool-tile {
     aspect-ratio: 1;
     border-radius: 14px;
-    background: #ffffff;
+    background: var(--color-card);
     border: 1px solid rgba(15, 23, 42, 0.06);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
     display: flex;
@@ -961,7 +1064,7 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 12px;
-    background: #ffffff;
+    background: var(--color-card);
     border: 1px solid rgba(15, 23, 42, 0.06);
     box-shadow:
         0 8px 18px rgba(15, 23, 42, 0.10),
@@ -1229,7 +1332,7 @@ a, button { -webkit-tap-highlight-color: transparent; }
    ======================================== */
 
 .admin-sidebar {
-    background: #ffffff;
+    background: var(--color-card);
     border-right: 1px solid var(--color-line);
 }
 

@@ -185,8 +185,8 @@
                 </div>
 
                 <aside class="lg:col-span-5 space-y-3">
-                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
-                        style="border: 1px solid var(--color-line);">
+                    <div class="p-5 flex items-center gap-4 rounded-2xl"
+                        style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(245,158,11,0.12); color: #b45309;">
                             <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
@@ -199,8 +199,8 @@
                             </p>
                         </div>
                     </div>
-                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
-                        style="border: 1px solid var(--color-line);">
+                    <div class="p-5 flex items-center gap-4 rounded-2xl"
+                        style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(37,99,235,0.10); color: #1d4ed8;">
                             <span class="material-symbols-outlined text-[22px]">location_on</span>
@@ -213,8 +213,8 @@
                             </p>
                         </div>
                     </div>
-                    <div class="bg-white p-5 flex items-center gap-4 rounded-2xl"
-                        style="border: 1px solid var(--color-line);">
+                    <div class="p-5 flex items-center gap-4 rounded-2xl"
+                        style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(16,185,129,0.12); color: #047857;">
                             <span class="material-symbols-outlined text-[22px]">handshake</span>
