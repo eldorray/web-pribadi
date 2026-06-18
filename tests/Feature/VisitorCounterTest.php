@@ -57,6 +57,17 @@ class VisitorCounterTest extends TestCase
     }
 
     #[Test]
+    public function it_shows_visitor_counter_on_first_visit(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('visitor-counter', false)
+            ->assertSee('visitor', false);
+
+        $this->assertSame(1, Visitor::count());
+    }
+
+    #[Test]
     public function it_shows_visitor_counter_on_public_pages(): void
     {
         Visitor::create([

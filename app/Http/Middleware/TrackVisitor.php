@@ -14,12 +14,10 @@ class TrackVisitor
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $response = $next($request);
-
-        if ($request->isMethod('GET') && $response->isSuccessful()) {
+        if ($request->isMethod('GET')) {
             VisitorTracker::track($request);
         }
 
-        return $response;
+        return $next($request);
     }
 }
