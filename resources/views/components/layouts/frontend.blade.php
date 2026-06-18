@@ -89,6 +89,9 @@
             {{-- Footer (in-card) --}}
             <footer class="mt-24">
                 <div class="border-t pt-8" style="border-color: var(--color-line);">
+                    <div class="mb-5">
+                        <x-visitor-counter />
+                    </div>
                     <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                         <p class="micro">© {{ date('Y') }} {{ $settings['site_name'] ?? 'Studio' }}. All rights
                             reserved.</p>

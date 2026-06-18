@@ -3,12 +3,15 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\AuthController;
+use App\Http\Middleware\TrackVisitor;
 
 // Public Frontend
-Route::get('/', [FrontendController::class, 'home'])->name('home');
-Route::get('/projects', [FrontendController::class, 'projects'])->name('projects');
-Route::get('/about', [FrontendController::class, 'about'])->name('about');
-Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');
+Route::middleware(TrackVisitor::class)->group(function () {
+    Route::get('/', [FrontendController::class, 'home'])->name('home');
+    Route::get('/projects', [FrontendController::class, 'projects'])->name('projects');
+    Route::get('/about', [FrontendController::class, 'about'])->name('about');
+    Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');
+});
 
 // Authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
