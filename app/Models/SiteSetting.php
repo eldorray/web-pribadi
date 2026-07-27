@@ -11,14 +11,22 @@ class SiteSetting extends Model
     public static function get(string $key, $default = null)
     {
         $setting = static::where('key', $key)->first();
+
         return $setting ? $setting->value : $default;
     }
 
-    public static function set(string $key, $value, string $type = 'text', string $group = 'general')
+    /**
+     * $type/$group are only applied when given, so saving a value never
+     * clobbers the group/type an existing setting already has.
+     */
+    public static function set(string $key, $value, ?string $type = null, ?string $group = null)
     {
-        return static::updateOrCreate(
-            ['key' => $key],
-            ['value' => $value, 'type' => $type, 'group' => $group]
-        );
+        $setting = static::firstOrNew(['key' => $key]);
+        $setting->value = $value;
+        $setting->type = $type ?? $setting->type ?? 'text';
+        $setting->group = $group ?? $setting->group ?? 'general';
+        $setting->save();
+
+        return $setting;
     }
 }

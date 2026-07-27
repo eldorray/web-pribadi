@@ -20,9 +20,26 @@ class Project extends Model
         parent::boot();
         static::creating(function ($project) {
             if (empty($project->slug)) {
-                $project->slug = Str::slug($project->title);
+                $project->slug = static::uniqueSlug($project->title);
             }
         });
+    }
+
+    /**
+     * slug is UNIQUE in the schema, so a duplicate (or non-latin, which slugs
+     * to '') title would blow up on insert. Suffix until free.
+     */
+    protected static function uniqueSlug(?string $title): string
+    {
+        $base = Str::slug((string) $title) ?: 'project';
+        $slug = $base;
+        $n = 2;
+
+        while (static::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$n++;
+        }
+
+        return $slug;
     }
 
     public function scopeFeatured($query)
@@ -40,6 +57,7 @@ class Project extends Model
         if ($category && $category !== 'all') {
             return $query->where('category', $category);
         }
+
         return $query;
     }
 
@@ -48,6 +66,7 @@ class Project extends Model
         if ($this->image && str_starts_with($this->image, 'http')) {
             return $this->image;
         }
-        return $this->image ? asset('storage/' . $this->image) : null;
+
+        return $this->image ? asset('storage/'.$this->image) : null;
     }
 }

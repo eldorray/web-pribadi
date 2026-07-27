@@ -16,7 +16,7 @@
         <div class="mt-6 sm:mt-8 chip-row animate-reveal delay-400">
             <a href="{{ route('projects') }}" class="chip"
                 style="{{ !request('category') ? 'background: var(--color-ink); color: var(--color-card); border-color: var(--color-ink);' : '' }}">
-                All · {{ $projects->count() }}
+                All · {{ $totalProjects }}
             </a>
             @foreach ($categories as $category)
                 <a href="{{ route('projects', ['category' => $category]) }}" class="chip"
@@ -42,7 +42,9 @@
                     <a href="{{ $project->link ?? '#' }}" {{ $project->link ? 'target=_blank rel=noopener' : '' }}
                         class="project-card">
                         <div class="project-card__image">
-                            <img src="{{ $project->image_url }}" alt="{{ $project->title }}" loading="lazy" />
+                            @if ($project->image_url)
+                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}" loading="lazy" />
+                            @endif
                         </div>
                         <div class="project-card__body">
                             <p class="project-card__cat">{{ $project->category }} · {{ $project->year }}</p>

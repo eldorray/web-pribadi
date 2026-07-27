@@ -11,7 +11,9 @@ class General extends Component
     use WithFileUploads;
 
     public array $settings = [];
+
     public array $imageUploads = [];
+
     public bool $saved = false;
 
     // Image-type setting keys
@@ -37,10 +39,19 @@ class General extends Component
 
     public function updatedImageUploads($value, $key)
     {
-        if ($value) {
-            $path = $value->store('settings', 'public');
-            $this->settings[$key] = asset('storage/' . $path);
+        if (! $value) {
+            return;
         }
+
+        $this->validateOnly("imageUploads.$key", [
+            "imageUploads.$key" => 'image|mimes:jpg,jpeg,png,gif,webp,avif,svg|max:4096',
+        ]);
+
+        $path = $value->store('settings', 'public');
+
+        // Root-relative, not asset(): an absolute URL bakes the current host
+        // into the DB and breaks every image when the site changes domain.
+        $this->settings[$key] = '/storage/'.$path;
     }
 
     public function removeImage(string $key)
@@ -52,8 +63,9 @@ class General extends Component
     public function save()
     {
         foreach ($this->settings as $key => $value) {
-            $type = $this->isImageSetting($key) ? 'image' : 'text';
-            SiteSetting::set($key, $value, $type);
+            // Pass no group: SiteSetting::set() keeps whatever group the row
+            // already has. Passing one flattened every setting into "general".
+            SiteSetting::set($key, $value, $this->isImageSetting($key) ? 'image' : null);
         }
         $this->saved = true;
     }
@@ -61,6 +73,7 @@ class General extends Component
     public function render()
     {
         $groups = SiteSetting::all()->groupBy('group');
+
         return view('livewire.admin.settings.general', [
             'groups' => $groups,
         ])->layout('layouts.admin', ['pageTitle' => 'Settings']);

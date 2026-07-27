@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Experience;
 use App\Models\Project;
 use App\Models\SiteSetting;
-use App\Models\Experience;
 use App\Models\Skill;
 use App\Models\SocialLink;
+use App\Models\Tool;
 
 class FrontendController extends Controller
 {
@@ -15,7 +16,7 @@ class FrontendController extends Controller
         $featuredProjects = Project::featured()->ordered()->take(3)->get();
         $settings = SiteSetting::pluck('value', 'key');
         $socialLinks = SocialLink::ordered()->get();
-        $tools = \App\Models\Tool::active()->ordered()->get();
+        $tools = Tool::active()->ordered()->get();
 
         return view('frontend.home', compact('featuredProjects', 'settings', 'socialLinks', 'tools'));
     }
@@ -24,11 +25,12 @@ class FrontendController extends Controller
     {
         $category = request('category');
         $projects = Project::byCategory($category)->ordered()->get();
+        $totalProjects = Project::count();
         $categories = Project::distinct()->pluck('category')->filter();
         $socialLinks = SocialLink::ordered()->get();
         $settings = SiteSetting::pluck('value', 'key');
 
-        return view('frontend.projects', compact('projects', 'categories', 'socialLinks', 'settings'));
+        return view('frontend.projects', compact('projects', 'totalProjects', 'categories', 'socialLinks', 'settings'));
     }
 
     public function about()

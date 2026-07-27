@@ -84,6 +84,7 @@
                         <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Description</label>
                         <textarea wire:model="description" rows="4" class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none resize-none"></textarea>
                         @error('description') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                    </div>
                     <div>
                         <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Link URL</label>
                         <input wire:model="link" type="url" placeholder="https://example.com" class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none" />
@@ -109,6 +110,7 @@
                     <div>
                         <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Project Image</label>
                         <input wire:model="image" type="file" accept="image/*" class="w-full text-sm text-outline file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-bold" />
+                        @error('image') <span class="text-error text-xs">{{ $message }}</span> @enderror
                         @if($existingImage)
                             <p class="text-xs text-outline mt-2">Current: {{ basename($existingImage) }}</p>
                         @endif

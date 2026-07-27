@@ -8,16 +8,21 @@ use Livewire\Component;
 class SocialLinks extends Component
 {
     public bool $showModal = false;
+
     public bool $editing = false;
+
     public ?int $editingId = null;
 
     public string $platform = '';
+
     public string $url = '';
+
     public int $sort_order = 0;
 
     protected $rules = [
         'platform' => 'required|max:100',
-        'url' => 'required|max:500',
+        // url column is VARCHAR(255); `url` rule also blocks javascript: hrefs.
+        'url' => 'required|url|max:255',
         'sort_order' => 'integer',
     ];
 

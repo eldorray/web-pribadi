@@ -11,19 +11,31 @@ class Index extends Component
     use WithFileUploads;
 
     public bool $showModal = false;
+
     public bool $editing = false;
+
     public ?int $editingId = null;
+
     public bool $confirmingDelete = false;
+
     public ?int $deletingId = null;
 
     public string $title = '';
+
     public string $description = '';
+
     public string $category = '';
+
     public string $year = '';
+
     public $image = null;
+
     public string $existingImage = '';
+
     public string $link = '';
+
     public bool $is_featured = false;
+
     public int $sort_order = 0;
 
     protected $rules = [
@@ -31,7 +43,9 @@ class Index extends Component
         'description' => 'required|min:10',
         'category' => 'required|max:100',
         'year' => 'required|digits:4',
-        'link' => 'nullable|url|max:500',
+        // link is a VARCHAR(255) column — max must match or the insert truncates/errors.
+        'link' => 'nullable|url|max:255',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,avif|max:4096',
         'is_featured' => 'boolean',
         'sort_order' => 'integer',
     ];
@@ -73,7 +87,7 @@ class Index extends Component
             'sort_order' => $this->sort_order,
         ];
 
-        if ($this->image && !is_string($this->image)) {
+        if ($this->image && ! is_string($this->image)) {
             $data['image'] = $this->image->store('projects', 'public');
         } elseif ($this->existingImage) {
             $data['image'] = $this->existingImage;

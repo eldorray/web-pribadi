@@ -54,7 +54,7 @@
 
             <div class="surface p-5 sm:p-7 animate-reveal delay-500" data-reveal>
                 <p class="text-sm sm:text-[15px] leading-relaxed italic" style="color: var(--color-ink-3);">
-                    ""Manusia yang paling dicintai oleh Allah adalah yang paling memberikan manfaat bagi manusia
+                    "Manusia yang paling dicintai oleh Allah adalah yang paling memberikan manfaat bagi manusia
                     lainnya."
                 </p>
                 <div class="flex items-center gap-3 mt-5">
@@ -64,7 +64,6 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold" style="color: var(--color-ink);">(HR. Thabrani)</p>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -77,9 +76,11 @@
                     class="block group animate-reveal" style="animation-delay: {{ 300 + $i * 100 }}ms;">
                     <div class="surface overflow-hidden">
                         <div class="aspect-[4/3] overflow-hidden" style="background: var(--color-card-soft);">
-                            <img src="{{ $project->image_url }}" alt="{{ $project->title }}"
-                                class="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-500 ease-out"
-                                loading="lazy" />
+                            @if ($project->image_url)
+                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}"
+                                    class="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-500 ease-out"
+                                    loading="lazy" />
+                            @endif
                         </div>
                         <div class="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3">
                             <div class="min-w-0 flex-1">

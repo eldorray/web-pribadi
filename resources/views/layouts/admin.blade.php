@@ -33,7 +33,7 @@
 
         {{-- Sidebar (mobile drawer + desktop static) --}}
         <aside
-            class="admin-sidebar w-64 fixed top-0 left-0 h-full z-40 flex flex-col p-5 transition-transform lg:transform-none"
+            class="admin-sidebar w-64 fixed top-0 left-0 h-full z-40 flex flex-col p-5 transition-transform -translate-x-full lg:translate-x-0 lg:transform-none"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
             <div class="flex items-center justify-between mb-8">
                 <a href="{{ route('admin.dashboard') }}" class="brand">
@@ -138,9 +138,8 @@
         </div>
     </div>
 
-    {{-- Alpine.js for sidebar toggle --}}
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+    {{-- Alpine comes bundled with Livewire; loading the CDN build too gives you
+         two Alpine instances and breaks x-data bindings. --}}
     @livewireScripts
 </body>
 

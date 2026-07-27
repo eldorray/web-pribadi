@@ -3,14 +3,20 @@
 namespace App\Livewire;
 
 use App\Models\ContactMessage;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class ContactForm extends Component
 {
     public string $name = '';
+
     public string $email = '';
+
     public string $subject = '';
+
     public string $message = '';
+
     public bool $submitted = false;
 
     protected $rules = [
@@ -23,6 +29,15 @@ class ContactForm extends Component
     public function submit()
     {
         $this->validate();
+
+        // Public endpoint — cap submissions per IP so it can't be used as a spam sink.
+        $key = 'contact-form:'.request()->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages([
+                'message' => 'Too many messages sent. Please try again in '.ceil(RateLimiter::availableIn($key) / 60).' minutes.',
+            ]);
+        }
+        RateLimiter::hit($key, 3600);
 
         ContactMessage::create([
             'name' => $this->name,

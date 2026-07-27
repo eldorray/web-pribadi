@@ -1,9 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FrontendController;
 use App\Http\Middleware\TrackVisitor;
+use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Projects\Index;
+use App\Livewire\Admin\Settings\General;
+use App\Livewire\Admin\Settings\SocialLinks;
+use Illuminate\Support\Facades\Route;
 
 // Public Frontend
 Route::middleware(TrackVisitor::class)->group(function () {
@@ -15,17 +19,17 @@ Route::middleware(TrackVisitor::class)->group(function () {
 
 // Authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
-Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
+Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:10,1']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Admin (auth-protected)
 Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('admin.dashboard');
-    Route::get('/projects', \App\Livewire\Admin\Projects\Index::class)->name('admin.projects');
-    Route::get('/skills', \App\Livewire\Admin\Skills\Index::class)->name('admin.skills');
-    Route::get('/tools', \App\Livewire\Admin\Tools\Index::class)->name('admin.tools');
-    Route::get('/experiences', \App\Livewire\Admin\Experiences\Index::class)->name('admin.experiences');
-    Route::get('/messages', \App\Livewire\Admin\Messages\Index::class)->name('admin.messages');
-    Route::get('/settings', \App\Livewire\Admin\Settings\General::class)->name('admin.settings');
-    Route::get('/social-links', \App\Livewire\Admin\Settings\SocialLinks::class)->name('admin.social-links');
+    Route::get('/', Dashboard::class)->name('admin.dashboard');
+    Route::get('/projects', Index::class)->name('admin.projects');
+    Route::get('/skills', App\Livewire\Admin\Skills\Index::class)->name('admin.skills');
+    Route::get('/tools', App\Livewire\Admin\Tools\Index::class)->name('admin.tools');
+    Route::get('/experiences', App\Livewire\Admin\Experiences\Index::class)->name('admin.experiences');
+    Route::get('/messages', App\Livewire\Admin\Messages\Index::class)->name('admin.messages');
+    Route::get('/settings', General::class)->name('admin.settings');
+    Route::get('/social-links', SocialLinks::class)->name('admin.social-links');
 });
