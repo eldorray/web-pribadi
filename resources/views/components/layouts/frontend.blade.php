@@ -14,25 +14,23 @@
     <title>{{ $title ?? ($settings['site_name'] ?? config('app.name')) }}</title>
     <meta name="description" content="{{ $metaDescription ?? ($settings['site_tagline'] ?? '') }}">
 
-    {{-- Favicon (configurable from admin → settings → general) --}}
+    {{-- Favicon (configurable from admin → settings → general).
+         No type= — uploads are re-encoded to WebP, so the extension varies. --}}
     @if (!empty($settings['site_favicon']))
-        <link rel="icon" type="image/png" href="{{ $settings['site_favicon'] }}" />
+        <link rel="icon" href="{{ $settings['site_favicon'] }}" />
         <link rel="apple-touch-icon" href="{{ $settings['site_favicon'] }}" />
     @else
         <link rel="icon"
             href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E✦%3C/text%3E%3C/svg%3E" />
     @endif
 
-    {{-- JetBrains Mono via Google Fonts. Satoshi loaded by app.css via Fontshare --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+    {{-- Satoshi + JetBrains Mono are self-hosted from public/fonts and declared
+         in app.css. Only the two weights that paint above the fold are
+         preloaded; the rest arrive with font-display: swap. --}}
+    <link rel="preload" href="/fonts/satoshi-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/satoshi-700.woff2" as="font" type="font/woff2" crossorigin />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
     <meta name="color-scheme" content="light dark">
     <script>
         {
@@ -71,8 +69,8 @@
 
                     {{-- Theme Toggle --}}
                     <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
-                        <span class="material-symbols-outlined theme-toggle-icon-dark" style="font-size: 20px;">dark_mode</span>
-                        <span class="material-symbols-outlined theme-toggle-icon-light" style="font-size: 20px;">light_mode</span>
+                        <x-icon name="dark_mode" :size="20" class="theme-toggle-icon-dark" />
+                        <x-icon name="light_mode" :size="20" class="theme-toggle-icon-light" />
                     </button>
 
                     {{-- Mobile: subtle availability indicator (nav handled by bottom dock) --}}
@@ -114,19 +112,19 @@
     {{-- Mobile bottom dock --}}
     <nav class="mobile-dock" aria-label="Mobile primary">
         <a href="{{ route('home') }}" class="dock-item {{ request()->routeIs('home') ? 'is-active' : '' }}">
-            <span class="material-symbols-outlined text-[20px]">waving_hand</span>
+            <x-icon name="waving_hand" :size="20" />
             <span class="dock-item__label">Hola!</span>
         </a>
         <a href="{{ route('projects') }}" class="dock-item {{ request()->routeIs('projects') ? 'is-active' : '' }}">
-            <span class="material-symbols-outlined text-[20px]">grid_view</span>
+            <x-icon name="grid_view" :size="20" />
             <span class="dock-item__label">Work</span>
         </a>
         <a href="{{ route('about') }}" class="dock-item {{ request()->routeIs('about') ? 'is-active' : '' }}">
-            <span class="material-symbols-outlined text-[20px]">person</span>
+            <x-icon name="person" :size="20" />
             <span class="dock-item__label">About</span>
         </a>
         <a href="{{ route('contact') }}" class="dock-item {{ request()->routeIs('contact') ? 'is-active' : '' }}">
-            <span class="material-symbols-outlined text-[20px]">mail</span>
+            <x-icon name="mail" :size="20" />
             <span class="dock-item__label">Contact</span>
         </a>
     </nav>
@@ -159,7 +157,9 @@
             });
         });
     </script>
-    @livewireScripts
+    {{-- @livewireStyles / @livewireScripts are deliberately absent: Livewire
+         auto-injects them only on requests that actually render a component, so
+         home/about/projects no longer download livewire.js at all. --}}
 </body>
 
 </html>

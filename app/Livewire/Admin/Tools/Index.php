@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Tools;
 
 use App\Models\Tool;
+use App\Support\Image;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -75,7 +76,7 @@ class Index extends Component
         // not asset() — an absolute URL bakes the current host into the DB and
         // breaks every icon the moment the site moves domain.
         if ($this->iconUpload && ! is_string($this->iconUpload)) {
-            $path = $this->iconUpload->store('tools', 'public');
+            $path = Image::optimize($this->iconUpload->store('tools', 'public'), 128);
             $this->icon_url = '/storage/'.$path;
         }
 

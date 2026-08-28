@@ -23,3 +23,21 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Long-lived caching for fingerprinted and static assets.
+# Hostinger's edge was returning max-age=604800 for everything under /build,
+# which Lighthouse flags — those filenames carry a content hash, so they can
+# never go stale. Fonts and images are versioned by upload path.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(woff2|woff|ttf|otf)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    <If "%{REQUEST_URI} =~ m#^/build/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+
+    <If "%{REQUEST_URI} =~ m#^/storage/#">
+        Header set Cache-Control "public, max-age=2592000"
+    </If>
+</IfModule>

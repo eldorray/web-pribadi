@@ -3,15 +3,14 @@
         <div class="text-center py-8">
             <div class="inline-flex w-14 h-14 rounded-full items-center justify-center mb-5"
                 style="background: rgba(16,185,129,0.12); color: #047857;">
-                <span class="material-symbols-outlined"
-                    style="font-variation-settings: 'FILL' 1; font-size: 26px;">check</span>
+                <x-icon name="check" :size="26" />
             </div>
             <h3 class="display display--md mb-2">Message sent.</h3>
             <p class="text-sm mb-6 max-w-sm mx-auto" style="color: var(--color-ink-4);">
                 Thanks for writing in. I'll be in touch within a couple of business days.
             </p>
             <button wire:click="$set('submitted', false)" class="btn btn-light">
-                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                <x-icon name="refresh" :size="16" />
                 Send another
             </button>
         </div>
@@ -59,7 +58,7 @@
                 <button type="submit" class="btn btn-embossed" wire:loading.attr="disabled">
                     <span wire:loading.remove>Send Message</span>
                     <span wire:loading>Sending…</span>
-                    <span class="material-symbols-outlined text-[16px]" wire:loading.remove>arrow_outward</span>
+                    <x-icon name="arrow_outward" :size="16" wire:loading.remove />
                 </button>
             </div>
         </form>

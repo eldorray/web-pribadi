@@ -31,8 +31,7 @@
     <section class="section !mt-2 sm:!mt-4" data-reveal>
         @if ($projects->count() === 0)
             <div class="surface text-center py-12 sm:py-16">
-                <span class="material-symbols-outlined text-5xl mb-3 block"
-                    style="color: var(--color-ink-5);">folder_open</span>
+                <x-icon name="folder_open" :size="48" class="mb-3 block" style="color: var(--color-ink-5);" />
                 <p style="color: var(--color-ink-4);">Nothing in this category yet.</p>
                 <a href="{{ route('projects') }}" class="btn btn-light mt-5">View all</a>
             </div>
@@ -43,7 +42,8 @@
                         class="project-card">
                         <div class="project-card__image">
                             @if ($project->image_url)
-                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}" loading="lazy" />
+                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}" width="1024" height="768"
+                                    loading="lazy" decoding="async" />
                             @endif
                         </div>
                         <div class="project-card__body">
@@ -69,7 +69,7 @@
             </p>
             <a href="{{ route('contact') }}" class="btn btn-embossed btn-lg">
                 Discuss a Project
-                <span class="material-symbols-outlined text-[16px]">arrow_outward</span>
+                <x-icon name="arrow_outward" :size="16" />
             </a>
         </div>
     </section>

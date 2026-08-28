@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Projects;
 
 use App\Models\Project;
+use App\Support\Image;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -88,7 +89,7 @@ class Index extends Component
         ];
 
         if ($this->image && ! is_string($this->image)) {
-            $data['image'] = $this->image->store('projects', 'public');
+            $data['image'] = Image::optimize($this->image->store('projects', 'public'), 1024);
         } elseif ($this->existingImage) {
             $data['image'] = $this->existingImage;
         }

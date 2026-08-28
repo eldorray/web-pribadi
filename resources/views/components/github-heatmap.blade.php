@@ -25,7 +25,7 @@
                 class="text-sm font-medium inline-flex items-center gap-1 hover:underline self-start sm:self-auto"
                 style="color: var(--color-ink-3);">
                 View GitHub
-                <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+                <x-icon name="arrow_outward" :size="14" />
             </a>
         </div>
 
@@ -76,8 +76,7 @@
         @else
             {{-- Fallback when fetch fails --}}
             <div class="py-12 text-center">
-                <span class="material-symbols-outlined text-4xl mb-3 block"
-                    style="color: var(--color-ink-5);">cloud_off</span>
+                <x-icon name="cloud_off" :size="36" class="mb-3 block" style="color: var(--color-ink-5);" />
                 <p class="text-sm mb-1" style="color: var(--color-ink-3);">Couldn't load contribution data right now.
                 </p>
                 <p class="text-xs" style="color: var(--color-ink-5);">

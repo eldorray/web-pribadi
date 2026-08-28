@@ -12,7 +12,7 @@
                 <div class="flex items-start justify-between">
                     <div class="flex items-start gap-4">
                         <div class="w-12 h-12 bg-surface-container-low rounded-xl flex items-center justify-center text-{{ $skill->color }}">
-                            <span class="material-symbols-outlined">{{ $skill->icon }}</span>
+                            <x-icon :name="$skill->icon" :size="24" />
                         </div>
                         <div>
                             <h4 class="font-bold text-on-surface">{{ $skill->title }}</h4>
@@ -51,7 +51,18 @@
                     <div class="grid grid-cols-3 gap-4">
                         <div>
                             <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Icon</label>
-                            <input wire:model="icon" type="text" placeholder="code" class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none" />
+                            {{-- Icons are inlined SVG, not a webfont, so only the names in
+                                 App\Support\Icons render. Anything else falls back to "code". --}}
+                            <input wire:model="icon" type="text" placeholder="code" list="skill-icon-names"
+                                class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none" />
+                            <datalist id="skill-icon-names">
+                                @foreach (\App\Support\Icons::names() as $iconName)
+                                    <option value="{{ $iconName }}"></option>
+                                @endforeach
+                            </datalist>
+                            @if ($icon && ! \App\Support\Icons::has($icon))
+                                <p class="text-xs text-error mt-2">Unknown icon — the site will show "code" instead.</p>
+                            @endif
                         </div>
                         <div>
                             <label class="font-label text-xs uppercase tracking-widest text-outline font-bold block mb-2">Color</label>

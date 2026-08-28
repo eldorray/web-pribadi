@@ -3,7 +3,7 @@
 @endphp
 
 <div class="visitor-counter" aria-label="Visitor counter">
-    <span class="visitor-counter__icon material-symbols-outlined" aria-hidden="true">groups</span>
+    <x-icon name="groups" :size="16" class="visitor-counter__icon" />
     <span class="visitor-counter__total">
         {{ number_format($stats['total']) }}
         <span class="visitor-counter__label">{{ $stats['total'] === 1 ? 'visitor' : 'visitors' }}</span>

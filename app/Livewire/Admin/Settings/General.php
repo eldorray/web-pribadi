@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Settings;
 
 use App\Models\SiteSetting;
+use App\Support\Image;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -47,7 +48,12 @@ class General extends Component
             "imageUploads.$key" => 'image|mimes:jpg,jpeg,png,gif,webp,avif,svg|max:4096',
         ]);
 
-        $path = $value->store('settings', 'public');
+        // Downscale + WebP before it ever reaches a page. Portraits render at
+        // 96px at most, favicons at 32px — the raw upload is wildly oversized.
+        $path = Image::optimize(
+            $value->store('settings', 'public'),
+            $key === 'site_favicon' ? 128 : 512,
+        );
 
         // Root-relative, not asset(): an absolute URL bakes the current host
         // into the DB and breaks every image when the site changes domain.

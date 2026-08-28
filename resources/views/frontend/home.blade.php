@@ -10,7 +10,8 @@
             <div class="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6 animate-reveal delay-150">
                 <div class="avatar-tile">
                     @if (!empty($settings['about_portrait']))
-                        <img src="{{ $settings['about_portrait'] }}" alt="Avatar" />
+                        <img src="{{ $settings['about_portrait'] }}" alt="Avatar" width="56" height="56"
+                            fetchpriority="high" decoding="async" />
                     @else
                         <div class="w-full h-full flex items-center justify-center text-xl font-bold"
                             style="background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff;">
@@ -30,7 +31,7 @@
 
             <div class="flex items-center gap-3 mb-9 animate-reveal delay-300 flex-wrap">
                 <a href="{{ route('contact') }}" class="btn btn-embossed">
-                    <span class="material-symbols-outlined text-[16px]">chat</span>
+                    <x-icon name="chat" :size="16" />
                     Discuss a Project
                 </a>
                 <span class="status">
@@ -40,16 +41,11 @@
             </div>
 
             <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-10 sm:mb-12 animate-reveal delay-400">
-                <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">language</span> Web Design</span>
-                <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">design_services</span> Vibe Code</span>
-                <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">edit_note</span> Copywriting</span>
-                <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">brush</span> Graphic Design</span>
-                <span class="chip"><span class="material-symbols-outlined text-[14px]"
-                        style="color: var(--color-ink-4);">code</span> Front-end</span>
+                <span class="chip"><x-icon name="language" :size="14" style="color: var(--color-ink-4);" /> Web Design</span>
+                <span class="chip"><x-icon name="design_services" :size="14" style="color: var(--color-ink-4);" /> Vibe Code</span>
+                <span class="chip"><x-icon name="edit_note" :size="14" style="color: var(--color-ink-4);" /> Copywriting</span>
+                <span class="chip"><x-icon name="brush" :size="14" style="color: var(--color-ink-4);" /> Graphic Design</span>
+                <span class="chip"><x-icon name="code" :size="14" style="color: var(--color-ink-4);" /> Front-end</span>
             </div>
 
             <div class="surface p-5 sm:p-7 animate-reveal delay-500" data-reveal>
@@ -77,9 +73,9 @@
                     <div class="surface overflow-hidden">
                         <div class="aspect-[4/3] overflow-hidden" style="background: var(--color-card-soft);">
                             @if ($project->image_url)
-                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}"
+                                <img src="{{ $project->image_url }}" alt="{{ $project->title }}" width="1024" height="768"
                                     class="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-500 ease-out"
-                                    loading="lazy" />
+                                    loading="lazy" decoding="async" />
                             @endif
                         </div>
                         <div class="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3">
@@ -93,9 +89,7 @@
                                     {{ $project->title }}
                                 </h3>
                             </div>
-                            <span
-                                class="material-symbols-outlined text-[16px] shrink-0 group-hover:translate-x-0.5 transition-transform"
-                                style="color: var(--color-ink-4);">arrow_outward</span>
+                            <x-icon name="arrow_outward" :size="16" class="shrink-0 group-hover:translate-x-0.5 transition-transform" style="color: var(--color-ink-4);" />
                         </div>
                     </div>
                 </a>
@@ -126,13 +120,12 @@
                     <div class="tool-tile" aria-label="{{ $tool->name }}">
                         <div class="tool-tile__icon" style="background: {{ $tool->gradient }};">
                             @if ($tool->icon_url)
-                                <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}"
-                                    class="w-[22px] h-[22px] object-contain" />
+                                <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}" width="22" height="22"
+                                    loading="lazy" decoding="async" class="w-[22px] h-[22px] object-contain" />
                             @elseif($tool->icon_svg)
                                 {!! $tool->icon_svg !!}
                             @else
-                                <span class="material-symbols-outlined"
-                                    style="color: white; font-size: 18px;">apps</span>
+                                <x-icon name="apps" :size="18" style="color: white;" />
                             @endif
                         </div>
                         <span class="tool-tile__name">{{ $tool->name }}</span>
@@ -147,13 +140,12 @@
                         <div class="tool-fan-card">
                             <div class="tool-fan-card__icon" style="background: {{ $tool->gradient }};">
                                 @if ($tool->icon_url)
-                                    <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}"
-                                        class="w-8 h-8 md:w-[38px] md:h-[38px] object-contain" />
+                                    <img src="{{ $tool->icon_url }}" alt="{{ $tool->name }}" width="38" height="38"
+                                        loading="lazy" decoding="async" class="w-8 h-8 md:w-[38px] md:h-[38px] object-contain" />
                                 @elseif($tool->icon_svg)
                                     {!! $tool->icon_svg !!}
                                 @else
-                                    <span class="material-symbols-outlined"
-                                        style="color: white; font-size: 28px;">apps</span>
+                                    <x-icon name="apps" :size="28" style="color: white;" />
                                 @endif
                             </div>
                             <span class="tool-fan-card__label">{{ $tool->name }}</span>
@@ -181,7 +173,7 @@
                     </p>
                     <a href="{{ route('contact') }}" class="btn btn-embossed">
                         Work With Me
-                        <span class="material-symbols-outlined text-[16px]">arrow_outward</span>
+                        <x-icon name="arrow_outward" :size="16" />
                     </a>
                 </div>
 
@@ -190,7 +182,7 @@
                         style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(245,158,11,0.12); color: #b45309;">
-                            <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
+                            <x-icon name="workspace_premium" :size="22" />
                         </div>
                         <div>
                             <p class="text-sm font-semibold" style="color: var(--color-ink);">
@@ -204,7 +196,7 @@
                         style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(37,99,235,0.10); color: #1d4ed8;">
-                            <span class="material-symbols-outlined text-[22px]">location_on</span>
+                            <x-icon name="location_on" :size="22" />
                         </div>
                         <div>
                             <p class="text-sm font-semibold" style="color: var(--color-ink);">Based in Indonesia
@@ -218,7 +210,7 @@
                         style="background: var(--color-card); border: 1px solid var(--color-line);">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style="background: rgba(16,185,129,0.12); color: #047857;">
-                            <span class="material-symbols-outlined text-[22px]">handshake</span>
+                            <x-icon name="handshake" :size="22" />
                         </div>
                         <div>
                             <p class="text-sm font-semibold" style="color: var(--color-ink);">Available for

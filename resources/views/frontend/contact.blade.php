@@ -55,8 +55,7 @@
                             @foreach ($socialLinks as $link)
                                 <a href="{{ $link->url }}" target="_blank" rel="noopener" class="chip">
                                     {{ $link->platform }}
-                                    <span class="material-symbols-outlined text-[12px]"
-                                        style="color: var(--color-ink-5);">arrow_outward</span>
+                                    <x-icon name="arrow_outward" :size="12" style="color: var(--color-ink-5);" />
                                 </a>
                             @endforeach
                         </div>

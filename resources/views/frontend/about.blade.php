@@ -6,9 +6,11 @@
             <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden mx-auto"
                 style="background: var(--color-card-soft); border: 4px solid var(--color-card); box-shadow: var(--shadow-card), 0 0 0 1px var(--color-line);">
                 @if (!empty($settings['about_page_portrait']))
-                    <img src="{{ $settings['about_page_portrait'] }}" alt="Portrait" class="w-full h-full object-cover" />
+                    <img src="{{ $settings['about_page_portrait'] }}" alt="Portrait" width="96" height="96"
+                        fetchpriority="high" decoding="async" class="w-full h-full object-cover" />
                 @elseif(!empty($settings['about_portrait']))
-                    <img src="{{ $settings['about_portrait'] }}" alt="Portrait" class="w-full h-full object-cover" />
+                    <img src="{{ $settings['about_portrait'] }}" alt="Portrait" width="96" height="96"
+                        fetchpriority="high" decoding="async" class="w-full h-full object-cover" />
                 @else
                     <div class="w-full h-full flex items-center justify-center text-2xl font-bold"
                         style="color: var(--color-ink);">
@@ -74,7 +76,7 @@
                 <div class="surface p-5 sm:p-6">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
                         style="background: var(--color-line-soft); color: var(--color-ink);">
-                        <span class="material-symbols-outlined text-[20px]">{{ $skill->icon }}</span>
+                        <x-icon :name="$skill->icon" :size="20" />
                     </div>
                     <h3 class="text-base font-semibold text-ink mb-2" style="color: var(--color-ink);">
                         {{ $skill->title }}</h3>
@@ -111,7 +113,7 @@
             <h2 class="display display--lg mb-4">Let's build something together.</h2>
             <a href="{{ route('contact') }}" class="btn btn-embossed btn-lg mt-3">
                 Discuss a Project
-                <span class="material-symbols-outlined text-[16px]">arrow_outward</span>
+                <x-icon name="arrow_outward" :size="16" />
             </a>
         </div>
     </section>
