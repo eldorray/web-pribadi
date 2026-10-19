@@ -1,78 +1,49 @@
-<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" :title="'Contact — ' . ($settings['site_name'] ?? 'Studio')">
-
-    {{-- HERO --}}
-    <section class="text-center pt-4 sm:pt-12 pb-6 sm:pb-8">
-        <p class="eyebrow mb-3 animate-reveal delay-100">Get in Touch</p>
-        <h1 class="display display--xl max-w-3xl mx-auto mb-3 sm:mb-4 animate-reveal delay-200"
-            style="font-size: clamp(1.75rem, 5vw, 3rem);">
-            Let's build something good together.
-        </h1>
-        <p class="lede max-w-2xl mx-auto px-4 mb-6 sm:mb-7 animate-reveal delay-300">
-            {{ $settings['contact_availability'] ?? 'Currently accepting a small number of new commissions. Drop a note about your project — timeline, scope, anything you have in mind.' }}
-        </p>
-        <span class="status animate-reveal delay-400">
-            <span class="status__dot"></span>
-            Avg. response 24-48 hrs
-        </span>
+<x-layouts.frontend :settings="$settings" :socialLinks="$socialLinks" :title="'Kontak — ' . ($settings['site_name'] ?? 'Portfolio')">
+    <section class="pf-panel pf-page-intro">
+        <a href="{{ route('home') }}" class="pf-back"><x-icon name="arrow_back" :size="16" /> Kembali ke beranda</a>
+        <div class="pf-page-intro__row"><h1>Mulai dari<br class="pf-mobile-break" /> sebuah obrolan.</h1><p>Punya ide, tantangan, atau sekadar ingin menyapa? Saya senang mendengarnya.</p></div>
     </section>
 
-    {{-- LAYOUT: form + sidebar --}}
-    <section class="section !mt-8 sm:!mt-12" data-reveal>
-        <div class="grid lg:grid-cols-12 gap-4 sm:gap-5 max-w-5xl mx-auto">
-            {{-- Form (8 cols) --}}
-            <div class="lg:col-span-8">
-                <div class="surface p-5 sm:p-8 lg:p-10">
-                    @livewire('contact-form')
-                </div>
-            </div>
-
-            {{-- Side info (4 cols) --}}
-            <aside class="lg:col-span-4 space-y-3">
-                <div class="surface-tint p-4 sm:p-5">
-                    <p class="eyebrow mb-2">Direct Email</p>
-                    <a href="mailto:{{ $settings['contact_email'] ?? '' }}"
-                        class="text-sm sm:text-base font-semibold break-all hover:underline"
-                        style="color: var(--color-ink);">
-                        {{ $settings['contact_email'] ?? 'hello@studio.com' }}
-                    </a>
-                </div>
-
-                @if (!empty($settings['contact_address_1']))
-                    <div class="surface-tint p-4 sm:p-5">
-                        <p class="eyebrow mb-2">Studio</p>
-                        <p class="text-sm leading-relaxed" style="color: var(--color-ink-3);">
-                            {{ $settings['contact_address_1'] }}<br />
-                            {{ $settings['contact_address_2'] ?? '' }}<br />
-                            {{ $settings['contact_address_3'] ?? '' }}
-                        </p>
-                    </div>
+    <div class="pf-contact-grid">
+        <section class="pf-panel pf-form-panel" aria-labelledby="contact-form-title">
+            <p class="pf-eyebrow">Mari berkolaborasi</p>
+            <h2 id="contact-form-title">Ceritakan ide Anda.</h2>
+            <p class="pf-form-panel__intro">Tidak harus sudah sempurna. Kita bisa memikirkannya bersama.</p>
+            @livewire('contact-form')
+        </section>
+        <aside class="pf-contact-aside">
+            <section class="pf-panel pf-contact-info">
+                <span class="pf-contact-info__icon"><x-icon name="mail" :size="24" /></span>
+                <p class="pf-eyebrow">Lebih nyaman lewat email?</p>
+                @if (!empty($settings['contact_email']))
+                    <a class="pf-email" href="mailto:{{ $settings['contact_email'] }}">{{ $settings['contact_email'] }} <x-icon name="arrow_outward" :size="18" /></a>
+                @else
+                    <p>Kirim pesan melalui formulir di samping.</p>
                 @endif
+                @if (!empty($settings['contact_availability']))
+                    <p class="pf-contact-availability"><span aria-hidden="true"></span>{{ $settings['contact_availability'] }}</p>
+                @endif
+            </section>
 
-                @if ($socialLinks && $socialLinks->count() > 0)
-                    <div class="surface-tint p-4 sm:p-5">
-                        <p class="eyebrow mb-3">Elsewhere</p>
-                        <div class="flex flex-wrap gap-2">
+            @if (!empty($settings['contact_address_1']) || ($socialLinks && $socialLinks->isNotEmpty()))
+                <section class="pf-panel pf-contact-info">
+                    @if (!empty($settings['contact_address_1']))
+                        <p class="pf-eyebrow">Berbasis di</p>
+                        <address>{{ $settings['contact_address_1'] }}<br />{{ $settings['contact_address_2'] ?? '' }}<br />{{ $settings['contact_address_3'] ?? '' }}</address>
+                    @endif
+                    @if ($socialLinks && $socialLinks->isNotEmpty())
+                        <div class="pf-contact-socials"><p class="pf-eyebrow">Temukan saya juga di</p><div class="pf-socials">
                             @foreach ($socialLinks as $link)
-                                <a href="{{ $link->url }}" target="_blank" rel="noopener" class="chip">
-                                    {{ $link->platform }}
-                                    <x-icon name="arrow_outward" :size="12" style="color: var(--color-ink-5);" />
-                                </a>
+                                <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer">{{ $link->platform }} <x-icon name="arrow_outward" :size="14" /></a>
                             @endforeach
-                        </div>
-                    </div>
-                @endif
+                        </div></div>
+                    @endif
+                </section>
+            @endif
 
-                <div class="surface-tint p-4 sm:p-5">
-                    <p class="eyebrow mb-3">How We'll Work</p>
-                    <ul class="space-y-2 text-sm" style="color: var(--color-ink-3);">
-                        <li class="flex gap-3"><span class="row__num">01.</span> Quick reply within 48 hrs</li>
-                        <li class="flex gap-3"><span class="row__num">02.</span> Discovery call (30 min, free)</li>
-                        <li class="flex gap-3"><span class="row__num">03.</span> Proposal &amp; timeline</li>
-                        <li class="flex gap-3"><span class="row__num">04.</span> Make something good</li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
-    </section>
-
+            <section class="pf-contact-note">
+                <x-icon name="chat" :size="22" /><div><h3>Hal baik dimulai dari percakapan.</h3><p>Ceritakan kebutuhan dan tujuan Anda. Kita cari langkah yang paling masuk akal untuk mewujudkannya.</p></div>
+            </section>
+        </aside>
+    </div>
 </x-layouts.frontend>

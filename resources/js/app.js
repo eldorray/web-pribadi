@@ -28,3 +28,15 @@ function setupScrollReveal() {
 
 document.addEventListener('DOMContentLoaded', setupScrollReveal);
 document.addEventListener('livewire:navigated', setupScrollReveal);
+
+// Keep unavailable project previews quiet instead of showing a broken image.
+function setupProjectImages() {
+    document.querySelectorAll('[data-project-image]').forEach((image) => {
+        const showPlaceholder = () => { image.hidden = true; };
+        image.addEventListener('error', showPlaceholder, { once: true });
+        if (image.complete && image.naturalWidth === 0) showPlaceholder();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', setupProjectImages);
+document.addEventListener('livewire:navigated', setupProjectImages);

@@ -26,6 +26,21 @@ class ContactForm extends Component
         'message' => 'required|min:10|max:5000',
     ];
 
+    protected $messages = [
+        'name.required' => 'Nama wajib diisi.',
+        'name.min' => 'Nama minimal 2 karakter.',
+        'name.max' => 'Nama maksimal 255 karakter.',
+        'email.required' => 'Email wajib diisi.',
+        'email.email' => 'Masukkan alamat email yang valid.',
+        'email.max' => 'Email maksimal 255 karakter.',
+        'subject.required' => 'Subjek wajib diisi.',
+        'subject.min' => 'Subjek minimal 2 karakter.',
+        'subject.max' => 'Subjek maksimal 255 karakter.',
+        'message.required' => 'Pesan wajib diisi.',
+        'message.min' => 'Pesan minimal 10 karakter.',
+        'message.max' => 'Pesan maksimal 5.000 karakter.',
+    ];
+
     public function submit()
     {
         $this->validate();
@@ -34,7 +49,7 @@ class ContactForm extends Component
         $key = 'contact-form:'.request()->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages([
-                'message' => 'Too many messages sent. Please try again in '.ceil(RateLimiter::availableIn($key) / 60).' minutes.',
+                'message' => 'Batas pengiriman pesan tercapai. Coba lagi dalam '.ceil(RateLimiter::availableIn($key) / 60).' menit.',
             ]);
         }
         RateLimiter::hit($key, 3600);

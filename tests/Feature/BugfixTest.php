@@ -178,6 +178,8 @@ class BugfixTest extends TestCase
         Project::create(['title' => 'B', 'category' => 'web'] + $attrs);
         Project::create(['title' => 'C', 'category' => 'print'] + $attrs);
 
-        $this->get('/projects?category=print')->assertSee('All · 3');
+        $this->get('/projects?category=print')
+            ->assertSee('Semua <span>3</span>', false)
+            ->assertSee('Menampilkan 1 dari 3 karya');
     }
 }

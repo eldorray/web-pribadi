@@ -1,64 +1,39 @@
-<div>
+<div class="pf-contact-form">
     @if ($submitted)
-        <div class="text-center py-8">
-            <div class="inline-flex w-14 h-14 rounded-full items-center justify-center mb-5"
-                style="background: rgba(16,185,129,0.12); color: #047857;">
-                <x-icon name="check" :size="26" />
-            </div>
-            <h3 class="display display--md mb-2">Message sent.</h3>
-            <p class="text-sm mb-6 max-w-sm mx-auto" style="color: var(--color-ink-4);">
-                Thanks for writing in. I'll be in touch within a couple of business days.
-            </p>
-            <button wire:click="$set('submitted', false)" class="btn btn-light">
-                <x-icon name="refresh" :size="16" />
-                Send another
-            </button>
+        <div class="pf-form-success" role="status" tabindex="-1">
+            <span class="pf-form-success__icon"><x-icon name="check" :size="30" /></span>
+            <h3>Pesan sudah terkirim.</h3>
+            <p>Terima kasih sudah bercerita. Saya akan membalas melalui email yang Anda tuliskan.</p>
+            <button type="button" wire:click="$set('submitted', false)" class="pf-button pf-button--small"><x-icon name="refresh" :size="17" /> Kirim pesan lagi</button>
         </div>
     @else
         <form wire:submit="submit">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="field !mb-0">
-                    <label class="field-label" for="cf-name">Name</label>
-                    <input id="cf-name" wire:model="name" type="text" placeholder="Your name" class="field-input"
-                        autocomplete="name" />
-                    @error('name')
-                        <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
-                    @enderror
+            <div class="pf-form-row">
+                <div class="pf-field">
+                    <label for="cf-name">Nama <span aria-hidden="true">*</span></label>
+                    <input id="cf-name" wire:model="name" type="text" placeholder="Nama Anda" autocomplete="name" required minlength="2" maxlength="255" @error('name') aria-invalid="true" aria-describedby="cf-name-error" @enderror />
+                    @error('name')<p id="cf-name-error" class="pf-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
-                <div class="field !mb-0">
-                    <label class="field-label" for="cf-email">Email</label>
-                    <input id="cf-email" wire:model="email" type="email" placeholder="you@studio.com"
-                        class="field-input" autocomplete="email" />
-                    @error('email')
-                        <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
-                    @enderror
+                <div class="pf-field">
+                    <label for="cf-email">Email <span aria-hidden="true">*</span></label>
+                    <input id="cf-email" wire:model="email" type="email" placeholder="nama@email.com" autocomplete="email" required maxlength="255" @error('email') aria-invalid="true" aria-describedby="cf-email-error" @enderror />
+                    @error('email')<p id="cf-email-error" class="pf-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
             </div>
-
-            <div class="field mt-4">
-                <label class="field-label" for="cf-subject">Subject</label>
-                <input id="cf-subject" wire:model="subject" type="text" placeholder="What's this about?"
-                    class="field-input" />
-                @error('subject')
-                    <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
-                @enderror
+            <div class="pf-field">
+                <label for="cf-subject">Subjek <span aria-hidden="true">*</span></label>
+                <input id="cf-subject" wire:model="subject" type="text" placeholder="Apa yang ingin kita diskusikan?" required minlength="2" maxlength="255" @error('subject') aria-invalid="true" aria-describedby="cf-subject-error" @enderror />
+                @error('subject')<p id="cf-subject-error" class="pf-field-error" role="alert">{{ $message }}</p>@enderror
             </div>
-
-            <div class="field">
-                <label class="field-label" for="cf-message">Message</label>
-                <textarea id="cf-message" wire:model="message" rows="6"
-                    placeholder="Project, timeline, dreams, doubts — write freely." class="field-textarea"></textarea>
-                @error('message')
-                    <span class="micro mt-2 block" style="color: var(--color-error);">— {{ $message }}</span>
-                @enderror
+            <div class="pf-field">
+                <label for="cf-message">Pesan <span aria-hidden="true">*</span></label>
+                <textarea id="cf-message" wire:model="message" rows="6" placeholder="Ceritakan ide, kebutuhan, atau hal yang ingin Anda wujudkan…" required minlength="10" maxlength="5000" @error('message') aria-invalid="true" aria-describedby="cf-message-error" @enderror></textarea>
+                @error('message')<p id="cf-message-error" class="pf-field-error" role="alert">{{ $message }}</p>@enderror
             </div>
-
-            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
-                <p class="micro">Required · Won't be shared</p>
-                <button type="submit" class="btn btn-embossed" wire:loading.attr="disabled">
-                    <span wire:loading.remove>Send Message</span>
-                    <span wire:loading>Sending…</span>
-                    <x-icon name="arrow_outward" :size="16" wire:loading.remove />
+            <div class="pf-form-actions">
+                <p>* Semua kolom wajib diisi.<br />Informasi Anda tidak dipublikasikan.</p>
+                <button type="submit" class="pf-button" wire:loading.attr="disabled" wire:target="submit">
+                    <span wire:loading.remove wire:target="submit">Kirim pesan</span><span wire:loading wire:target="submit" role="status">Mengirim…</span><x-icon name="arrow_outward" :size="19" />
                 </button>
             </div>
         </form>
