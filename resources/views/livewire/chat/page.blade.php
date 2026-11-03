@@ -184,6 +184,13 @@
             @error('uploads.*')
                 <p class="chat-composer__error">{{ $message }}</p>
             @enderror
+
+            @if ($models->isEmpty())
+                <p class="chat-composer__hint">
+                    Belum ada model aktif. Buka <strong>admin → Chat AI</strong>, lalu centang
+                    <strong>Aktif</strong> pada model yang ingin dipakai.
+                </p>
+            @endif
         </div>
     </div>
 </div>

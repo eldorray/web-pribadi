@@ -2358,3 +2358,12 @@ a, button { -webkit-tap-highlight-color: transparent; }
     .chat-scroll { scroll-behavior: auto; }
     .chat-thinking__dots span { animation: none; }
 }
+
+.chat-composer__hint {
+    max-width: 720px;
+    margin: 0.5rem auto 0;
+    font-size: 0.8125rem;
+    color: var(--color-ink-4);
+}
+
+.chat-composer__hint strong { color: var(--color-ink-2); font-weight: 600; }

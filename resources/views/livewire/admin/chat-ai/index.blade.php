@@ -95,8 +95,13 @@
         <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
             <div>
                 <h2 class="text-lg font-bold" style="color: var(--color-ink);">Model</h2>
-                <p class="text-sm mt-1" style="color: var(--color-ink-4);">Hanya model yang dicentang yang muncul di
-                    halaman chat.</p>
+                <p class="text-sm mt-1" style="color: var(--color-ink-4);">Hanya model yang dicentang
+                    <strong>Aktif</strong> yang muncul di halaman chat.</p>
+                <p class="text-xs mt-2 leading-relaxed" style="color: var(--color-ink-5);">
+                    <strong>Baca gambar</strong> = model bisa menerima lampiran gambar.
+                    <strong>Buat gambar</strong> = model generator gambar — model ini <em>tidak</em> muncul di
+                    pilihan chat, hanya di mode "Gambar". Jangan centang keduanya untuk model chat biasa.
+                </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" wire:click="fetchModels" wire:loading.attr="disabled" wire:target="fetchModels"
@@ -137,7 +142,7 @@
                     <table class="w-full min-w-[640px]">
                         <thead>
                             <tr class="border-b" style="border-color: var(--color-line);">
-                                @foreach (['Model', 'Label', 'Aktif', 'Default', 'Effort', 'Vision', 'Gambar', ''] as $head)
+                                @foreach (['Model', 'Label', 'Aktif', 'Default', 'Effort', 'Baca gambar', 'Buat gambar', ''] as $head)
                                     <th class="text-left px-3 py-2 text-[11px] uppercase tracking-widest font-semibold"
                                         style="color: var(--color-ink-5);">{{ $head }}</th>
                                 @endforeach

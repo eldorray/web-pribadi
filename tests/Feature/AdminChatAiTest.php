@@ -116,6 +116,18 @@ class AdminChatAiTest extends TestCase
     }
 
     #[Test]
+    public function model_flags_are_labelled_clearly(): void
+    {
+        // "Gambar" alone was read as "supports images", so people ticked it on
+        // chat models and the model vanished from the chat picker.
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/chat-ai')
+            ->assertOk()
+            ->assertSee('Baca gambar')
+            ->assertSee('Buat gambar');
+    }
+
+    #[Test]
     public function add_user_hashes_pin(): void
     {
         Livewire::actingAs(User::factory()->create())
