@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\ChatAi\Index;
 use App\Models\AiModel;
+use App\Models\ChatConversation;
 use App\Models\ChatUser;
 use App\Models\SiteSetting;
 use App\Models\User;
@@ -167,6 +168,6 @@ class AdminChatAiTest extends TestCase
             ->call('deleteUser', $user->id);
 
         $this->assertSame(0, ChatUser::count());
-        $this->assertSame(0, \App\Models\ChatConversation::count());
+        $this->assertSame(0, ChatConversation::count());
     }
 }

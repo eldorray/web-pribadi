@@ -1,0 +1,407 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Livewire\Chat\Page;
+use App\Models\AiModel;
+use App\Models\ChatConversation;
+use App\Models\ChatMessage;
+use App\Models\ChatUser;
+use App\Models\SiteSetting;
+use App\Services\AiClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportTesting\Testable;
+use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class ChatPageTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private ChatUser $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake('local');
+        SiteSetting::set('ai_base_url', 'https://ai.test/v1', 'text', 'ai');
+        SiteSetting::set('ai_streaming', '0', 'text', 'ai');
+        AiClient::setApiKey('sk-TEST');
+
+        $this->user = ChatUser::create(['name' => 'Ayu', 'pin' => Hash::make('123456')]);
+
+        AiModel::create([
+            'model_id' => 'chat-basic',
+            'label' => 'Chat Basic',
+            'is_enabled' => true,
+            'is_default' => true,
+            'supports_vision' => true,
+        ]);
+
+        AiModel::create([
+            'model_id' => 'chat-effort',
+            'label' => 'Chat Effort',
+            'is_enabled' => true,
+            'supports_effort' => true,
+        ]);
+
+        AiModel::create([
+            'model_id' => 'img-model',
+            'label' => 'Gambar',
+            'is_enabled' => true,
+            'is_default' => true,
+            'is_image' => true,
+        ]);
+    }
+
+    /** Bind the PIN user the way the ChatPin middleware does. */
+    private function chatPage(): Testable
+    {
+        app()->instance('chatUser', $this->user);
+
+        return Livewire::test(Page::class);
+    }
+
+    private function loggedInGet(string $uri)
+    {
+        $response = $this->post('/chat/pin', ['pin' => '123456']);
+
+        return $this->withUnencryptedCookie('chat_session', $response->getCookie('chat_session', false)->getValue())
+            ->get($uri);
+    }
+
+    private function sse(string $content): string
+    {
+        return 'data: '.json_encode(['choices' => [['delta' => ['content' => $content]]]])."\n\n"
+            ."data: [DONE]\n\n";
+    }
+
+    private function fakeChat(string $content = 'Halo juga'): void
+    {
+        Http::fake([
+            'ai.test/v1/chat/completions' => Http::response($this->sse($content)),
+        ]);
+    }
+
+    #[Test]
+    public function page_is_reachable_and_noindex(): void
+    {
+        $this->loggedInGet('/chat')
+            ->assertOk()
+            ->assertSee('noindex', false)
+            ->assertDontSee('sk-TEST');
+    }
+
+    #[Test]
+    public function send_saves_user_and_assistant_messages(): void
+    {
+        $this->fakeChat('Halo juga');
+
+        $this->chatPage()
+            ->set('prompt', 'Halo')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $conversation = ChatConversation::first();
+
+        $this->assertNotNull($conversation);
+        $this->assertSame('Halo', $conversation->title);
+        $this->assertSame(2, $conversation->messages()->count());
+        $this->assertSame('user', $conversation->messages[0]->role);
+        $this->assertSame('Halo', $conversation->messages[0]->content);
+        $this->assertSame('assistant', $conversation->messages[1]->role);
+        $this->assertSame('Halo juga', $conversation->messages[1]->content);
+        $this->assertSame('chat-basic', $conversation->messages[1]->model);
+    }
+
+    #[Test]
+    public function effort_only_for_supporting_model(): void
+    {
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('prompt', 'Halo')
+            ->set('modelId', 'chat-basic')
+            ->set('effort', 'high')
+            ->call('send');
+
+        $bodies = [];
+        Http::assertSent(function (Request $request) use (&$bodies) {
+            $bodies[] = $request->data();
+
+            return true;
+        });
+
+        $this->assertArrayNotHasKey('reasoning_effort', $bodies[0]);
+
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('prompt', 'Halo lagi')
+            ->set('modelId', 'chat-effort')
+            ->set('effort', 'high')
+            ->call('send');
+
+        Http::assertSent(fn (Request $request) => ($request->data()['reasoning_effort'] ?? null) === 'high');
+    }
+
+    #[Test]
+    public function rejects_invalid_attachment_type_and_size(): void
+    {
+        $this->chatPage()
+            ->set('prompt', 'Lihat ini')
+            ->set('uploads', [UploadedFile::fake()->create('jahat.exe', 10)])
+            ->call('send')
+            ->assertHasErrors('uploads.0');
+
+        $this->chatPage()
+            ->set('prompt', 'Lihat ini')
+            ->set('uploads', [UploadedFile::fake()->create('besar.pdf', 11 * 1024)])
+            ->call('send')
+            ->assertHasErrors('uploads.0');
+
+        $this->chatPage()
+            ->set('prompt', 'Terlalu banyak')
+            ->set('uploads', collect(range(1, 6))
+                ->map(fn (int $i) => UploadedFile::fake()->create("file{$i}.pdf", 10))
+                ->all())
+            ->call('send')
+            ->assertHasErrors('uploads');
+
+        $this->assertSame(0, ChatMessage::count());
+    }
+
+    #[Test]
+    public function image_rejected_for_non_vision_model(): void
+    {
+        AiModel::where('model_id', 'chat-basic')->update(['supports_vision' => false]);
+
+        $this->chatPage()
+            ->set('prompt', 'Lihat gambar ini')
+            ->set('modelId', 'chat-basic')
+            ->set('uploads', [UploadedFile::fake()->image('foto.png')])
+            ->call('send')
+            ->assertHasErrors('uploads');
+
+        $this->assertSame(0, ChatMessage::count());
+        $this->assertSame(0, count(Storage::disk('local')->allFiles()));
+    }
+
+    #[Test]
+    public function docx_text_included_in_request(): void
+    {
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('prompt', 'Ringkas dokumen ini')
+            ->set('uploads', [
+                UploadedFile::fake()->createWithContent(
+                    'catatan.docx',
+                    file_get_contents(__DIR__.'/../fixtures/sample.docx'),
+                ),
+            ])
+            ->call('send')
+            ->assertHasNoErrors();
+
+        Http::assertSent(function (Request $request) {
+            $messages = $request->data()['messages'] ?? [];
+            $last = end($messages);
+
+            return is_string($last['content'] ?? null)
+                && str_contains($last['content'], 'Halo dunia')
+                && str_contains($last['content'], 'catatan.docx');
+        });
+    }
+
+    #[Test]
+    public function older_images_become_placeholders(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Lama']);
+        Storage::disk('local')->put('chat/'.$this->user->id.'/lama.png', 'PNGDATA');
+
+        $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'Gambar lama',
+            'attachments' => [[
+                'path' => 'chat/'.$this->user->id.'/lama.png',
+                'name' => 'lama.png',
+                'mime' => 'image/png',
+                'text' => null,
+            ]],
+        ]);
+
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('conversationId', $conversation->id)
+            ->set('prompt', 'Yang baru')
+            ->call('send');
+
+        Http::assertSent(function (Request $request) {
+            $messages = $request->data()['messages'] ?? [];
+            $first = $messages[0]['content'] ?? '';
+
+            return is_string($first)
+                && str_contains($first, '[gambar: lama.png]')
+                && ! str_contains($first, 'base64');
+        });
+    }
+
+    #[Test]
+    public function image_mode_saves_generated_file(): void
+    {
+        Http::fake([
+            'ai.test/v1/images/generations' => Http::response([
+                'data' => [['b64_json' => base64_encode('GENERATED-IMAGE')]],
+            ]),
+        ]);
+
+        $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('prompt', 'kucing biru')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $message = ChatMessage::where('role', 'assistant')->first();
+
+        $this->assertNotNull($message);
+        $this->assertNotNull($message->image_path);
+        Storage::disk('local')->assertExists($message->image_path);
+        $this->assertSame('GENERATED-IMAGE', Storage::disk('local')->get($message->image_path));
+    }
+
+    #[Test]
+    public function provider_error_saved_as_error_message(): void
+    {
+        Http::fake(['ai.test/v1/chat/completions' => Http::response('<html>boom</html>', 500)]);
+
+        $this->chatPage()
+            ->set('prompt', 'Halo')
+            ->call('send');
+
+        $error = ChatMessage::where('is_error', true)->first();
+
+        $this->assertNotNull($error);
+        $this->assertStringContainsString('500', $error->content);
+        $this->assertStringNotContainsString('sk-TEST', $error->content);
+    }
+
+    #[Test]
+    public function empty_answer_shows_placeholder(): void
+    {
+        Http::fake(['ai.test/v1/chat/completions' => Http::response("data: [DONE]\n\n")]);
+
+        $this->chatPage()
+            ->set('prompt', 'Halo')
+            ->call('send');
+
+        $assistant = ChatMessage::where('role', 'assistant')->first();
+
+        $this->assertSame('(Tidak ada jawaban)', $assistant->content);
+    }
+
+    #[Test]
+    public function retry_replaces_error_message(): void
+    {
+        Http::fakeSequence('ai.test/v1/chat/completions')
+            ->push('<html>boom</html>', 500)
+            ->push($this->sse('Pulih'), 200);
+
+        $this->chatPage()->set('prompt', 'Halo')->call('send');
+
+        $error = ChatMessage::where('is_error', true)->firstOrFail();
+
+        $this->chatPage()->call('retry', $error->id);
+
+        $this->assertSame(0, ChatMessage::where('is_error', true)->count());
+        $this->assertSame('Pulih', ChatMessage::where('role', 'assistant')->first()->content);
+    }
+
+    #[Test]
+    public function delete_conversation_removes_files(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Hapus']);
+        Storage::disk('local')->put('chat/'.$this->user->id.'/x.png', 'X');
+
+        $message = $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'Hapus aku',
+            'attachments' => [[
+                'path' => 'chat/'.$this->user->id.'/x.png',
+                'name' => 'x.png',
+                'mime' => 'image/png',
+                'text' => null,
+            ]],
+        ]);
+
+        $this->chatPage()->call('deleteConversation', $conversation->id);
+
+        $this->assertSame(0, ChatConversation::count());
+        $this->assertSame(0, ChatMessage::count());
+        Storage::disk('local')->assertMissing('chat/'.$this->user->id.'/x.png');
+        $this->assertNotNull($message->id);
+    }
+
+    #[Test]
+    public function user_cannot_open_other_users_conversation(): void
+    {
+        $other = ChatUser::create(['name' => 'Budi', 'pin' => Hash::make('654321')]);
+        $conversation = $other->conversations()->create(['title' => 'Rahasia']);
+
+        $this->loggedInGet('/chat/'.$conversation->id)->assertNotFound();
+    }
+
+    #[Test]
+    public function user_cannot_download_other_users_file(): void
+    {
+        $other = ChatUser::create(['name' => 'Budi', 'pin' => Hash::make('654321')]);
+        $conversation = $other->conversations()->create(['title' => 'Rahasia']);
+        Storage::disk('local')->put('chat/'.$other->id.'/rahasia.png', 'X');
+
+        $message = $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'Rahasia',
+            'attachments' => [[
+                'path' => 'chat/'.$other->id.'/rahasia.png',
+                'name' => 'rahasia.png',
+                'mime' => 'image/png',
+                'text' => null,
+            ]],
+        ]);
+
+        $this->loggedInGet('/chat/file/'.$message->id.'/0')->assertNotFound();
+    }
+
+    #[Test]
+    public function own_file_is_served(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Punya sendiri']);
+        Storage::disk('local')->put('chat/'.$this->user->id.'/milik.png', 'PNGDATA');
+
+        $message = $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'Lihat',
+            'attachments' => [[
+                'path' => 'chat/'.$this->user->id.'/milik.png',
+                'name' => 'milik.png',
+                'mime' => 'image/png',
+                'text' => null,
+            ]],
+        ]);
+
+        $response = $this->loggedInGet('/chat/file/'.$message->id.'/0');
+
+        $response->assertOk();
+        $this->assertSame('PNGDATA', $response->streamedContent());
+    }
+}

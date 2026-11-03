@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatAuthController;
+use App\Http\Controllers\ChatFileController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Middleware\ChatPin;
 use App\Http\Middleware\TrackVisitor;
@@ -9,6 +10,7 @@ use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Projects\Index;
 use App\Livewire\Admin\Settings\General;
 use App\Livewire\Admin\Settings\SocialLinks;
+use App\Livewire\Chat\Page;
 use Illuminate\Support\Facades\Route;
 
 // Public Frontend
@@ -27,7 +29,8 @@ Route::prefix('chat')->group(function () {
     Route::post('/logout', [ChatAuthController::class, 'logout'])->name('chat.logout');
 
     Route::middleware(ChatPin::class)->group(function () {
-        Route::get('/', fn () => 'ok')->name('chat');
+        Route::get('/file/{message}/{index}', ChatFileController::class)->name('chat.file');
+        Route::get('/{conversation?}', Page::class)->name('chat')->whereNumber('conversation');
     });
 });
 
