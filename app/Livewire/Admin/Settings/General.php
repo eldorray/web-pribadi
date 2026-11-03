@@ -27,7 +27,7 @@ class General extends Component
 
     public function mount()
     {
-        $allSettings = SiteSetting::all();
+        $allSettings = SiteSetting::public()->get();
         foreach ($allSettings as $setting) {
             $this->settings[$setting->key] = $setting->value;
         }
@@ -78,7 +78,7 @@ class General extends Component
 
     public function render()
     {
-        $groups = SiteSetting::all()->groupBy('group');
+        $groups = SiteSetting::public()->get()->groupBy('group');
 
         return view('livewire.admin.settings.general', [
             'groups' => $groups,

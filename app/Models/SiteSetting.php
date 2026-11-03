@@ -2,11 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class SiteSetting extends Model
 {
     protected $fillable = ['key', 'value', 'type', 'group'];
+
+    /**
+     * Settings that are safe to hand to public views. The `ai` group holds the
+     * provider API key, so it must never reach the frontend.
+     *
+     * @param  Builder<SiteSetting>  $query
+     */
+    public function scopePublic(Builder $query): void
+    {
+        $query->where('group', '!=', 'ai');
+    }
 
     public static function get(string $key, $default = null)
     {

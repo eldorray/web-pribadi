@@ -14,7 +14,7 @@ class FrontendController extends Controller
     public function home()
     {
         $featuredProjects = Project::featured()->ordered()->take(3)->get();
-        $settings = SiteSetting::pluck('value', 'key');
+        $settings = SiteSetting::public()->pluck('value', 'key');
         $socialLinks = SocialLink::ordered()->get();
         $tools = Tool::active()->ordered()->get();
 
@@ -28,14 +28,14 @@ class FrontendController extends Controller
         $totalProjects = Project::count();
         $categories = Project::distinct()->pluck('category')->filter();
         $socialLinks = SocialLink::ordered()->get();
-        $settings = SiteSetting::pluck('value', 'key');
+        $settings = SiteSetting::public()->pluck('value', 'key');
 
         return view('frontend.projects', compact('projects', 'totalProjects', 'categories', 'socialLinks', 'settings'));
     }
 
     public function about()
     {
-        $settings = SiteSetting::pluck('value', 'key');
+        $settings = SiteSetting::public()->pluck('value', 'key');
         $skills = Skill::ordered()->get();
         $experiences = Experience::ordered()->get();
         $socialLinks = SocialLink::ordered()->get();
@@ -45,7 +45,7 @@ class FrontendController extends Controller
 
     public function contact()
     {
-        $settings = SiteSetting::pluck('value', 'key');
+        $settings = SiteSetting::public()->pluck('value', 'key');
         $socialLinks = SocialLink::ordered()->get();
 
         return view('frontend.contact', compact('settings', 'socialLinks'));
