@@ -84,6 +84,11 @@
                         </span>
                     @endif
                 </a>
+                <a href="{{ route('admin.chat-ai') }}"
+                    class="admin-sidebar-link {{ request()->routeIs('admin.chat-ai') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                    Chat AI
+                </a>
                 <a href="{{ route('admin.settings') }}"
                     class="admin-sidebar-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                     <span class="material-symbols-outlined text-[20px]">tune</span>

@@ -44,6 +44,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/tools', App\Livewire\Admin\Tools\Index::class)->name('admin.tools');
     Route::get('/experiences', App\Livewire\Admin\Experiences\Index::class)->name('admin.experiences');
     Route::get('/messages', App\Livewire\Admin\Messages\Index::class)->name('admin.messages');
+    Route::get('/chat-ai', App\Livewire\Admin\ChatAi\Index::class)->name('admin.chat-ai');
     Route::get('/settings', General::class)->name('admin.settings');
     Route::get('/social-links', SocialLinks::class)->name('admin.social-links');
 });
