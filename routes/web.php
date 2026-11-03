@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatAuthController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Middleware\ChatPin;
 use App\Http\Middleware\TrackVisitor;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Projects\Index;
@@ -15,6 +17,18 @@ Route::middleware(TrackVisitor::class)->group(function () {
     Route::get('/projects', [FrontendController::class, 'projects'])->name('projects');
     Route::get('/about', [FrontendController::class, 'about'])->name('about');
     Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');
+});
+
+// Chat AI — PIN-gated, deliberately outside TrackVisitor and never linked
+// from the portfolio navigation (see <meta name="robots" content="noindex">).
+Route::prefix('chat')->group(function () {
+    Route::get('/pin', [ChatAuthController::class, 'showPin'])->name('chat.pin');
+    Route::post('/pin', [ChatAuthController::class, 'submitPin'])->name('chat.pin.submit');
+    Route::post('/logout', [ChatAuthController::class, 'logout'])->name('chat.logout');
+
+    Route::middleware(ChatPin::class)->group(function () {
+        Route::get('/', fn () => 'ok')->name('chat');
+    });
 });
 
 // Authentication

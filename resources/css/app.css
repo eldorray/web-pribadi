@@ -1486,3 +1486,114 @@ a, button { -webkit-tap-highlight-color: transparent; }
     }
     *::before, *::after { animation: none !important; }
 }
+
+/* ========================================
+   Chat AI (/chat) — private, PIN-gated.
+   Prefixed .chat- so nothing here can leak into the portfolio or admin.
+   ======================================== */
+
+.chat-body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ---------- PIN screen ---------- */
+
+.chat-pin {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.chat-pin__card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    padding: 2rem 1.75rem;
+    text-align: center;
+}
+
+.chat-pin__mark {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1.25rem;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-ink);
+    color: var(--color-on-primary);
+}
+
+.chat-pin__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.chat-pin__lede {
+    margin-top: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-ink-4);
+    line-height: 1.5;
+}
+
+.chat-pin__form {
+    margin-top: 1.5rem;
+}
+
+.chat-pin__input {
+    width: 100%;
+    background: var(--color-card-soft);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    font-family: var(--font-mono);
+    /* 16px keeps iOS from zooming the viewport on focus. */
+    font-size: 16px;
+    letter-spacing: 0.5em;
+    text-align: center;
+    color: var(--color-ink);
+}
+
+.chat-pin__input:focus {
+    outline: none;
+    background: var(--color-card);
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.06);
+}
+
+.chat-pin__input.is-invalid {
+    border-color: var(--color-error);
+}
+
+.chat-pin__error {
+    margin-top: 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--color-error);
+    text-align: left;
+}
+
+.chat-pin__submit {
+    margin-top: 1rem;
+    width: 100%;
+    min-height: 46px;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-on-primary);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.chat-pin__submit:hover { opacity: 0.9; }
+.chat-pin__submit:active { transform: scale(0.98); }
