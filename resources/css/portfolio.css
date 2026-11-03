@@ -253,6 +253,20 @@ a.pf-project__image:hover img { transform: scale(1.025); }
 .portfolio .visitor-counter { padding: 0; background: none; border: none; color: var(--pf-muted); font-family: inherit; font-size: 11px; letter-spacing: 0; }
 .portfolio .visitor-counter__total, .portfolio .visitor-counter__label { color: var(--pf-muted); }
 .pf-theme { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 11px; color: var(--pf-muted); }
+.pf-footer__actions { display: flex; align-items: center; gap: 10px; }
+/* Private chat entrance: icon only, no label, so it reads as a door rather than
+   a navigation item. Still a 44px touch target and keyboard focusable. */
+.pf-chat-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -12px;
+    color: var(--pf-muted);
+    transition: color 160ms ease, transform 160ms ease;
+}
+.pf-chat-link:hover, .pf-chat-link:focus-visible { color: var(--pf-green); transform: translateY(-1px); }
 .pf-theme__sun { display: none; }
 .dark .portfolio .pf-theme__sun { display: block; }
 .dark .portfolio .pf-theme__moon { display: none; }

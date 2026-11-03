@@ -72,11 +72,16 @@
             </div>
             <div class="pf-footer__utility">
                 <x-visitor-counter />
-                <button type="button" id="theme-toggle" class="pf-theme" aria-label="Gunakan tampilan gelap" aria-pressed="false">
-                    <x-icon name="dark_mode" :size="16" class="pf-theme__moon" />
-                    <x-icon name="light_mode" :size="16" class="pf-theme__sun" />
-                    <span class="pf-theme__label">Tampilan gelap</span>
-                </button>
+                <div class="pf-footer__actions">
+                    <a href="{{ route('chat') }}" class="pf-chat-link" aria-label="Chat AI" title="Chat AI">
+                        <x-icon name="smart_toy" :size="16" />
+                    </a>
+                    <button type="button" id="theme-toggle" class="pf-theme" aria-label="Gunakan tampilan gelap" aria-pressed="false">
+                        <x-icon name="dark_mode" :size="16" class="pf-theme__moon" />
+                        <x-icon name="light_mode" :size="16" class="pf-theme__sun" />
+                        <span class="pf-theme__label">Tampilan gelap</span>
+                    </button>
+                </div>
             </div>
         </footer>
     </div>
