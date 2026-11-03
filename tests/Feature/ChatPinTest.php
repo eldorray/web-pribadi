@@ -86,6 +86,17 @@ class ChatPinTest extends TestCase
     }
 
     #[Test]
+    public function chat_pin_is_persistent_middleware(): void
+    {
+        // Livewire updates POST to /livewire/update; without persistence the
+        // PIN gate would not run there and app('chatUser') would be unbound.
+        $middleware = app(\Livewire\Mechanisms\PersistentMiddleware\PersistentMiddleware::class)
+            ->getPersistentMiddleware();
+
+        $this->assertContains(\App\Http\Middleware\ChatPin::class, $middleware);
+    }
+
+    #[Test]
     public function logout_forgets_cookie(): void
     {
         $this->post('/chat/logout')

@@ -34,6 +34,12 @@ class ChatPin
         if (! $user) {
             Cookie::queue(Cookie::forget(self::COOKIE));
 
+            // Livewire update requests expect JSON; a redirect would be
+            // swallowed by fetch and surface as an opaque parse error.
+            if ($request->expectsJson() || $request->hasHeader('X-Livewire')) {
+                abort(403, 'Sesi chat sudah berakhir. Muat ulang halaman.');
+            }
+
             return redirect()->route('chat.pin');
         }
 
