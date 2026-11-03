@@ -48,6 +48,13 @@
                         <x-icon name="download" :size="14" /> Unduh
                     </a>
                 </figure>
+
+                @if (trim((string) $message->content) !== '')
+                    <details class="chat-generated__prompt">
+                        <summary>Prompt yang dipakai</summary>
+                        <p>{{ $message->content }}</p>
+                    </details>
+                @endif
             @else
                 <div class="chat-markdown">
                     {!! $message->html() !!}

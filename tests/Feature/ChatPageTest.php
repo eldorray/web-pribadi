@@ -260,6 +260,9 @@ class ChatPageTest extends TestCase
     public function image_mode_saves_generated_file(): void
     {
         Http::fake([
+            'ai.test/v1/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => 'Kucing biru lucu, latar polos, 1:1']]],
+            ]),
             'ai.test/v1/images/generations' => Http::response([
                 'data' => [['b64_json' => base64_encode('GENERATED-IMAGE')]],
             ]),
@@ -278,6 +281,91 @@ class ChatPageTest extends TestCase
         $this->assertNotNull($message->image_path);
         Storage::disk('local')->assertExists($message->image_path);
         $this->assertSame('GENERATED-IMAGE', Storage::disk('local')->get($message->image_path));
+    }
+
+    #[Test]
+    public function image_mode_plans_the_prompt_and_forwards_the_ratio(): void
+    {
+        // Handing "buatkan flyer ppdb 16:9" straight to the image model made it
+        // return a kitten, so a chat model rewrites it first and the ratio is
+        // passed through as aspect_ratio instead of a fixed size.
+        $planned = 'Flyer PPDB sekolah, judul besar "PPDB 2027", hijau dan emas, 16:9';
+
+        Http::fake([
+            'ai.test/v1/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => $planned]]],
+            ]),
+            'ai.test/v1/images/generations' => Http::response([
+                'data' => [['b64_json' => base64_encode('GENERATED-IMAGE')]],
+            ]),
+        ]);
+
+        $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('prompt', 'buatkan flyer ppdb dengan rasio 16:9')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $message = ChatMessage::where('role', 'assistant')->first();
+
+        $this->assertSame($planned, $message->content);
+
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/generations')
+            && $request['prompt'] === $planned
+            && $request['aspect_ratio'] === '16:9'
+            && ! isset($request['size']));
+    }
+
+    #[Test]
+    public function image_mode_falls_back_when_the_provider_rejects_the_ratio(): void
+    {
+        Http::fake([
+            'ai.test/v1/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => 'Poster PPDB hijau emas']]],
+            ]),
+            'ai.test/v1/images/generations' => Http::sequence()
+                ->push(['error' => ['code' => 'unsupported_image_controls', 'message' => 'unsupported_image_controls']], 400)
+                ->push(['data' => [['b64_json' => base64_encode('SQUARE-IMAGE')]]]),
+        ]);
+
+        $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('prompt', 'poster ppdb 16:9')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $message = ChatMessage::where('role', 'assistant')->first();
+
+        $this->assertSame('SQUARE-IMAGE', Storage::disk('local')->get($message->image_path));
+        Http::assertSentCount(3); // planner, rejected 16:9 attempt, square retry
+    }
+
+    #[Test]
+    public function conversation_deleted_while_generating_does_not_crash(): void
+    {
+        // A generation can take a minute; if the conversation is deleted in the
+        // meantime the insert used to break the foreign key and return a 500.
+        Http::fake([
+            'ai.test/v1/chat/completions' => fn () => Http::response([
+                'choices' => [['message' => ['content' => 'Poster PPDB hijau']]],
+            ]),
+            'ai.test/v1/images/generations' => function () {
+                ChatConversation::query()->delete();
+
+                return Http::response(['data' => [['b64_json' => base64_encode('IMG')]]]);
+            },
+        ]);
+
+        $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('prompt', 'poster ppdb')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $this->assertSame(0, ChatMessage::where('role', 'assistant')->count());
     }
 
     #[Test]

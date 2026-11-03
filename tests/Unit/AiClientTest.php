@@ -183,6 +183,19 @@ class AiClientTest extends TestCase
     }
 
     #[Test]
+    public function aspect_ratio_is_read_from_plain_language(): void
+    {
+        $this->assertSame('16:9', AiClient::requestedAspectRatio('buatkan flyer ppdb rasio 16:9'));
+        $this->assertSame('9:16', AiClient::requestedAspectRatio('poster 9:16 untuk story'));
+        $this->assertSame('16:9', AiClient::requestedAspectRatio('gambar landscape'));
+        $this->assertSame('9:16', AiClient::requestedAspectRatio('versi potret'));
+        $this->assertSame('1:1', AiClient::requestedAspectRatio('persegi saja'));
+        $this->assertNull(AiClient::requestedAspectRatio('gambar kucing biru'));
+        // A time or a price is not a canvas ratio.
+        $this->assertNull(AiClient::requestedAspectRatio('rapat jam 10:30'));
+    }
+
+    #[Test]
     public function missing_api_key_fails_cleanly(): void
     {
         SiteSetting::set('ai_api_key', '', 'text', 'ai');

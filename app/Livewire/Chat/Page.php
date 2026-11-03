@@ -254,13 +254,26 @@ class Page extends Component
         $chatUser = $this->chatUser();
 
         if ($this->imageMode) {
-            $prompt = (string) $conversation->messages()->where('role', 'user')->latest('id')->value('content');
+            $request = (string) $conversation->messages()->where('role', 'user')->latest('id')->value('content');
+
+            // The user writes an instruction ("buatkan flyer ppdb"), not an image
+            // description. Handing that straight to the image model is what makes
+            // it drift, so a chat model rewrites it first when one is available.
+            $planner = AiModel::defaultChat();
+            $prompt = ($planner !== null ? $client->planImagePrompt($request, $planner->model_id) : null) ?? $request;
+            $ratio = AiClient::requestedAspectRatio($request);
 
             try {
-                $bytes = $client->generateImage($model->model_id, $prompt);
+                $bytes = $client->generateImage($model->model_id, $prompt, $ratio);
             } catch (AiException $e) {
                 $this->storeError($conversation, $e->getMessage());
 
+                return;
+            }
+
+            // Generation can take a minute; the conversation may have been
+            // deleted meanwhile, and inserting into it would break the FK.
+            if (! $this->conversationStillExists($conversation)) {
                 return;
             }
 
@@ -269,6 +282,8 @@ class Page extends Component
 
             $conversation->messages()->create([
                 'role' => 'assistant',
+                // Kept so the prompt behind the picture stays inspectable.
+                'content' => $prompt,
                 'model' => $model->model_id,
                 'image_path' => $path,
             ]);
@@ -303,6 +318,10 @@ class Page extends Component
 
         $content = trim($result['content']);
 
+        if (! $this->conversationStillExists($conversation)) {
+            return;
+        }
+
         $conversation->messages()->create([
             'role' => 'assistant',
             'content' => $content === '' ? '(Tidak ada jawaban)' : $result['content'],
@@ -316,11 +335,24 @@ class Page extends Component
 
     private function storeError(ChatConversation $conversation, string $message): void
     {
+        if (! $this->conversationStillExists($conversation)) {
+            return;
+        }
+
         $conversation->messages()->create([
             'role' => 'assistant',
             'content' => $message,
             'is_error' => true,
         ]);
+    }
+
+    /**
+     * A provider call can outlive the conversation it belongs to; inserting a
+     * message into a row that is gone breaks the foreign key.
+     */
+    private function conversationStillExists(ChatConversation $conversation): bool
+    {
+        return ChatConversation::whereKey($conversation->getKey())->exists();
     }
 
     /**

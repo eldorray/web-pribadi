@@ -124,7 +124,8 @@
                     </div>
                 @endif
 
-                <textarea wire:model="prompt" data-chat-input rows="1" placeholder="Tulis pesan…" maxlength="20000"
+                <textarea wire:model="prompt" data-chat-input rows="1"
+                    placeholder="{{ $imageMode ? 'Deskripsikan gambar yang ingin dibuat…' : 'Tulis pesan…' }}" maxlength="20000"
                     aria-label="Pesan" class="chat-input"></textarea>
 
                 <div class="chat-toolbar">

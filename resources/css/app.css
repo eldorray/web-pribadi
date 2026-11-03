@@ -2367,3 +2367,30 @@ a, button { -webkit-tap-highlight-color: transparent; }
 }
 
 .chat-composer__hint strong { color: var(--color-ink-2); font-weight: 600; }
+
+.chat-generated__prompt {
+    margin-top: 0.55rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    max-width: 62ch;
+    color: var(--color-ink-3);
+}
+
+.chat-generated__prompt summary {
+    cursor: pointer;
+    list-style: none;
+    width: fit-content;
+    padding: 0.15rem 0;
+    color: var(--color-ink-4);
+    border-bottom: 1px dashed var(--color-line);
+}
+
+.chat-generated__prompt summary::-webkit-details-marker { display: none; }
+
+.chat-generated__prompt summary:hover { color: var(--color-ink-2); }
+
+.chat-generated__prompt p {
+    margin-top: 0.45rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}

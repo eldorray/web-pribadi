@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\ChatPin;
 use App\Models\ChatUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Mechanisms\PersistentMiddleware\PersistentMiddleware;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -90,10 +92,10 @@ class ChatPinTest extends TestCase
     {
         // Livewire updates POST to /livewire/update; without persistence the
         // PIN gate would not run there and app('chatUser') would be unbound.
-        $middleware = app(\Livewire\Mechanisms\PersistentMiddleware\PersistentMiddleware::class)
+        $middleware = app(PersistentMiddleware::class)
             ->getPersistentMiddleware();
 
-        $this->assertContains(\App\Http\Middleware\ChatPin::class, $middleware);
+        $this->assertContains(ChatPin::class, $middleware);
     }
 
     #[Test]

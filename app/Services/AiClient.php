@@ -10,6 +10,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -147,18 +148,100 @@ class AiClient
      *
      * Two provider shapes are supported because OpenAI-compatible gateways
      * disagree: /images/generations, or /chat/completions with image modality.
+     *
+     * $aspectRatio is a hint like "16:9". Providers that only do squares reject
+     * it with unsupported_image_controls, so the call is retried without it
+     * rather than failing the request.
      */
-    public function generateImage(string $model, string $prompt): string
+    public function generateImage(string $model, string $prompt, ?string $aspectRatio = null): string
     {
-        $bytes = self::imageMode() === 'chat'
-            ? $this->imageViaChat($model, $prompt)
-            : $this->imageViaImagesEndpoint($model, $prompt);
+        try {
+            $bytes = self::imageMode() === 'chat'
+                ? $this->imageViaChat($model, $prompt)
+                : $this->imageViaImagesEndpoint($model, $prompt, $aspectRatio);
+        } catch (AiException $e) {
+            if ($aspectRatio === null || ! str_contains($e->getMessage(), 'unsupported_image_controls')) {
+                throw $e;
+            }
+
+            $bytes = self::imageMode() === 'chat'
+                ? $this->imageViaChat($model, $prompt)
+                : $this->imageViaImagesEndpoint($model, $prompt, null);
+        }
 
         if ($bytes === '') {
             throw new AiException('Penyedia tidak mengembalikan gambar.');
         }
 
         return $bytes;
+    }
+
+    /**
+     * Turn a conversational request ("buatkan saya flyer ppdb 16:9") into a
+     * prompt an image model can follow. Sent as-is, that sentence is mostly
+     * instruction to us, not a description of the picture — which is how a
+     * request for a school flyer comes back as a kitten.
+     *
+     * Returns null when no chat model is available or the rewrite failed; the
+     * caller then falls back to the user's own words.
+     */
+    public function planImagePrompt(string $request, string $model): ?string
+    {
+        $request = trim($request);
+
+        if ($request === '') {
+            return null;
+        }
+
+        try {
+            $result = $this->chat([
+                ['role' => 'system', 'content' => <<<'TXT'
+                    You turn a user's request into ONE prompt for an image generator.
+                    Describe subject, composition, layout, colours, style and the exact text that
+                    must appear, quoting it verbatim in the user's own language.
+                    If the user names an aspect ratio, repeat it.
+                    Never invent phone numbers, addresses, logos or academic years the user did not give;
+                    leave those out instead.
+                    Reply with the prompt only — no preamble, no explanation, no markdown.
+                    TXT],
+                ['role' => 'user', 'content' => $request],
+            ], $model);
+        } catch (AiException) {
+            return null;
+        }
+
+        $planned = trim($result['content']);
+
+        return $planned === '' ? null : Str::limit($planned, 1200, '');
+    }
+
+    /**
+     * Pull a canvas ratio out of plain language, so "rasio 16:9" or
+     * "landscape" reaches the provider instead of being ignored.
+     */
+    public static function requestedAspectRatio(string $text): ?string
+    {
+        // Only canvas ratios the providers actually understand; this keeps
+        // "jam 10:30" or a price from being read as a canvas.
+        static $ratios = ['1:1', '4:3', '3:4', '3:2', '2:3', '16:9', '9:16', '21:9', '5:4', '4:5', '2:1', '1:2'];
+
+        if (preg_match('/(?<![\d:.])(\d{1,2})\s*[:x×]\s*(\d{1,2})(?![\d:])/u', $text, $m) === 1) {
+            $ratio = ((int) $m[1]).':'.((int) $m[2]);
+
+            if (in_array($ratio, $ratios, true)) {
+                return $ratio;
+            }
+        }
+
+        $lower = Str::lower($text);
+
+        return match (true) {
+            str_contains($lower, 'landscape'), str_contains($lower, 'horizontal') => '16:9',
+            str_contains($lower, 'potret'), str_contains($lower, 'portrait'),
+            str_contains($lower, 'vertikal'), str_contains($lower, 'story') => '9:16',
+            str_contains($lower, 'persegi'), str_contains($lower, 'square') => '1:1',
+            default => null,
+        };
     }
 
     /**
@@ -226,14 +309,20 @@ class AiClient
         return ['content' => $content, 'truncated' => $truncated];
     }
 
-    private function imageViaImagesEndpoint(string $model, string $prompt): string
+    private function imageViaImagesEndpoint(string $model, string $prompt, ?string $aspectRatio = null): string
     {
-        $json = $this->decode($this->request()->post('/images/generations', [
+        $payload = [
             'model' => $model,
             'prompt' => $prompt,
-            'size' => '1024x1024',
             'n' => 1,
-        ]));
+        ];
+
+        // Some gateways only accept 1:1 and answer 400 to any canvas control.
+        if ($aspectRatio !== null && $aspectRatio !== '') {
+            $payload['aspect_ratio'] = $aspectRatio;
+        }
+
+        $json = $this->decode($this->request()->post('/images/generations', $payload));
 
         $row = $json['data'][0] ?? null;
 
