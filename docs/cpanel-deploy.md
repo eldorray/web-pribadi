@@ -149,3 +149,26 @@ Setelah migrasi dan seeding, login admin ada di:
 ```
 
 Segera ganti password admin setelah deploy.
+
+## Chat AI (`/chat`)
+
+Halaman chat pribadi ini butuh tiga hal di hosting:
+
+1. **Dependency baru.** `composer install --no-dev --optimize-autoloader` akan memasang
+   `smalot/pdfparser` (PHP murni, tanpa ekstensi tambahan). Jika `vendor` di-upload manual,
+   pastikan folder `vendor/smalot/pdfparser` ikut.
+2. **`storage/app/private` harus bisa ditulis.** Lampiran dan gambar hasil generate disimpan
+   di sana lewat disk `local` — bukan di `public`. Tidak perlu `storage:link` untuk chat.
+   Set folder ke `775` bila upload lampiran gagal.
+3. **Streaming.** Jawaban dikirim bertahap (`X-Accel-Buffering: no` sudah dikirim Livewire).
+   Jika hosting tetap mem-buffer respons sehingga jawaban baru muncul sekaligus di akhir,
+   matikan **Streaming** di `/admin/chat-ai` — chat tetap berfungsi, hanya tidak bertahap.
+
+Setelah deploy, isi di `/admin/chat-ai`: base URL (`…/v1`), API key, klik **Tes koneksi**,
+lalu **Ambil model** dan aktifkan model yang dipakai. Tambahkan pengguna chat beserta PIN
+6 angka. Halaman `/chat` sengaja tidak ditautkan dari navigasi portfolio dan memakai
+`noindex`.
+
+Pembuatan gambar bisa memakan waktu; request-nya menaikkan `set_time_limit(180)` sendiri.
+Kalau penyedia menolak `/images/generations`, ganti **Mode buat gambar** ke
+`/chat/completions (modalities)`.

@@ -1,3 +1,5 @@
+import './chat';
+
 /**
  * Trigger blur-reveal on elements that scroll into view.
  * (top of page items get auto-revealed by their inline delay class.)
