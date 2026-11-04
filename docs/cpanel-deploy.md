@@ -183,3 +183,14 @@ Setelah upload, jalankan `php artisan migrate`.
 - Tidak perlu `ffmpeg` atau queue worker. Video diolah di browser dosen, jadi halaman harus tetap terbuka selama proses.
 - Di admin → Chat AI, centang **Aktif** dan **Transkripsi** pada satu model transkripsi, misalnya `amanai/grok-voice-transcribe-2.0`. Tanpa itu, video hanya bisa dinilai dengan transkrip yang ditempel manual.
 
+### Menilai dari link di file Excel
+
+Hosting biasanya diblokir YouTube, jadi video diunduh dari komputer dosen. Dua skrip ini dijalankan di komputer dosen, tidak perlu di-upload ke hosting.
+
+```bash
+python3 scripts/grading-download.py nilai.xlsx
+python3 scripts/grading-fill.py nilai.xlsx hasil-ekspor.csv
+```
+
+Skrip pertama membuat folder `nilai-video/<sheet>/` berisi `<NIM> - <Nama>.mp4`, yang lalu diunggah ke sesi Penilaian. Skrip kedua mengisi salinan file Excel dari CSV ekspor, dicocokkan lewat NIM. Keduanya butuh `pip install openpyxl`, dan skrip pertama juga butuh `yt-dlp` dan `ffmpeg`.
+

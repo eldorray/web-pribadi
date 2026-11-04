@@ -37,6 +37,8 @@ Alasannya: menilai puluhan tugas memakan waktu, sebagian besar untuk membaca dan
 - **Hosting cPanel shared:** tidak ada queue worker, `ffmpeg` tidak bisa diandalkan, batas upload bisa kecil. Tidak ada dependency baru di server.
 - Penyedia AI OpenAI-compatible (saat ini amanai). Daftar modelnya tidak menunjukkan model yang bisa menonton video langsung, tetapi ada model yang bisa membaca gambar dan model transkripsi (`grok-voice-transcribe-*`, `muse-voice-transcribe-*`).
 - **Sudah diverifikasi di amanai (4 November 2026):** `POST /audio/transcriptions` tersedia untuk `muse-voice-transcribe-1.0` dan `grok-voice-transcribe-2.0`. Keduanya tidak mengembalikan `segments`; dengan `verbose_json` muse mengembalikan `turns` dan grok mengembalikan `words`. Satu request `/chat/completions` ke `gpt-6.1-terra` menerima 30 gambar. Batas ukuran file transkripsi belum diuji.
+- **AI tidak bisa mendengar suara.** Pada 4 November 2026, model chat amanai yang merespons menjawab tidak menerima audio lewat `input_audio`. Karena itu kriteria pelafalan ditandai "dinilai dosen saja": AI tidak memberi usulan, dan skornya wajib diisi dosen sebelum disetujui.
+- **Tugas dari link:** link tetap belum didukung di aplikasi. Skrip di komputer dosen mengunduh video dari file Excel kelas dan menamainya `<NIM> - <Nama>.mp4`, lalu skrip lain mengisi nilai yang disetujui ke salinan Excel lewat NIM.
 - **Batas hosting belum diketahui** (`upload_max_filesize`, `post_max_size`, batas waktu request). Kode tidak boleh mengasumsikan angka tertentu; lihat bagian Antrean.
 - Tugas mahasiswa adalah data orang lain dan dikirim ke penyedia AI. Halaman unggah menampilkan pengingat satu baris tentang hal ini.
 
