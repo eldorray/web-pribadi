@@ -350,4 +350,36 @@ class GradingVideoTest extends TestCase
 
         $this->assertSame('Transkripsi gagal: kuota habis', $item->fresh()->error);
     }
+
+    #[Test]
+    public function reselecting_a_video_whose_transcription_failed_reuses_the_item(): void
+    {
+        $item = $this->video([
+            'status' => GradingItem::FAILED,
+            'transcript_status' => GradingItem::TRANSCRIPT_FAILED,
+            'error' => 'Belum ada model transkripsi aktif.',
+        ]);
+
+        $this->createVideo()->assertOk()->assertJson(['id' => $item->id, 'status' => GradingItem::PREPARING]);
+
+        $this->assertSame(1, GradingItem::count());
+        $this->assertNull($item->fresh()->error);
+        $this->assertSame(GradingItem::TRANSCRIPT_PENDING, $item->fresh()->transcript_status);
+    }
+
+    #[Test]
+    public function reselecting_does_not_touch_an_approved_video(): void
+    {
+        $item = $this->video([
+            'status' => GradingItem::APPROVED,
+            'transcript_status' => GradingItem::TRANSCRIPT_FAILED,
+            'approved_at' => now(),
+            'final_scores' => [5],
+        ]);
+
+        $this->createVideo()->assertOk()->assertJson(['student_name' => 'Dewi (2)']);
+
+        $this->assertSame(2, GradingItem::count());
+        $this->assertSame(GradingItem::APPROVED, $item->fresh()->status);
+    }
 }

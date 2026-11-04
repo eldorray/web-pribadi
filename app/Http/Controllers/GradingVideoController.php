@@ -58,8 +58,14 @@ class GradingVideoController extends Controller
             'error' => null,
         ];
 
-        // A video that never finished is resumed by selecting its file again.
-        $item = $batch->items()->where('status', GradingItem::PREPARING)->where('original_name', $name)->first();
+        // A video that never finished, or whose transcription failed, is picked up
+        // by selecting its file again instead of becoming a second submission.
+        $item = $batch->items()
+            ->where('original_name', $name)
+            ->where(fn ($query) => $query->where('status', GradingItem::PREPARING)->orWhere(fn ($failed) => $failed
+                ->where('status', GradingItem::FAILED)
+                ->where('transcript_status', GradingItem::TRANSCRIPT_FAILED)))
+            ->first();
 
         if ($item !== null) {
             GradingFiles::deleteForItem($item);
