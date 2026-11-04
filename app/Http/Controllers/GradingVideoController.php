@@ -161,10 +161,15 @@ class GradingVideoController extends Controller
     {
         $item = $this->ownedItem($item);
 
-        if ($request->boolean('audio_failed')) {
+        // Pending with no text means the audio never got through, whatever the
+        // reason. Grading it would score speech from pictures and look legitimate.
+        $noTranscript = $item->transcript_status === GradingItem::TRANSCRIPT_PENDING
+            && ($request->boolean('audio_failed') || trim((string) $item->transcript) === '');
+
+        if ($noTranscript) {
             $item->update([
                 'transcript_status' => GradingItem::TRANSCRIPT_FAILED,
-                'error' => 'Suara video ini tidak bisa dibaca browser. Tempel transkrip atau pilih nilai tanpa transkrip.',
+                'error' => 'Suara video ini tidak bisa diproses. Tempel transkrip atau pilih nilai tanpa transkrip.',
             ]);
         }
 

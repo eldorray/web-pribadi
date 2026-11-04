@@ -266,12 +266,31 @@ class GradingProcessTest extends TestCase
     public function opening_the_batch_page_releases_stuck_items(): void
     {
         $item = $this->essay(['status' => GradingItem::PROCESSING]);
-        GradingItem::whereKey($item->id)->toBase()->update(['updated_at' => now()->subMinutes(6)]);
+        GradingItem::whereKey($item->id)->toBase()->update(['updated_at' => now()->subMinutes(11)]);
 
         $this->withCookie(ChatPin::COOKIE, ChatPin::cookieValue($this->user))
             ->get(route('chat.grading.batch', $this->batch))
             ->assertOk();
 
         $this->assertSame(GradingItem::QUEUED, $item->fresh()->status);
+    }
+
+    #[Test]
+    public function scores_saved_while_grading_are_not_overwritten(): void
+    {
+        $item = $this->essay();
+
+        Http::fake(['ai.test/*' => function () use ($item) {
+            GradingItem::whereKey($item->id)->update(['final_scores' => json_encode([1, 2])]);
+
+            return Http::response(['choices' => [['message' => ['content' => json_encode([
+                'criteria' => [['index' => 0, 'score' => 7], ['index' => 1, 'score' => 15]],
+            ])]]]]);
+        }]);
+
+        $this->grade($item)->assertOk();
+
+        $this->assertEquals([1, 2], $item->fresh()->final_scores);
+        $this->assertSame(22.0, $item->fresh()->aiTotal());
     }
 }

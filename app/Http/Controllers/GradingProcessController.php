@@ -46,7 +46,10 @@ class GradingProcessController extends Controller
             return $this->finish($item, $this->settledStatus($item, GradingItem::FAILED), ['error' => $e->getMessage()]);
         }
 
-        // A regrade never touches the lecturer's numbers.
+        // Read again: the lecturer may have saved scores during this long call,
+        // and a regrade never touches the lecturer's numbers.
+        $item->refresh();
+
         return $this->finish($item, $this->settledStatus($item, GradingItem::READY), [
             'ai_result' => $result,
             'final_scores' => $item->final_scores ?? array_column($result['criteria'], 'score'),

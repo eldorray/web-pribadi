@@ -27,6 +27,7 @@
             Satu file untuk satu mahasiswa. Nama mahasiswa diambil dari nama file.
             Gambar dan dokumen maksimal {{ round($uploadLimit / 1048576, 1) }} MB per file.
             Video maksimal 20 menit, diolah di browser ini dan tidak disimpan di server, jadi biarkan halaman tetap terbuka.
+            Suara dari file di atas 500 MB tidak dibaca otomatis, jadi transkripnya perlu ditempel.
         </p>
         <p class="chat-grading__status" data-grading-progress role="status"></p>
         <ul class="chat-grading__messages" data-grading-messages></ul>

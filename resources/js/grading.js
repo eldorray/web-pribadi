@@ -48,6 +48,9 @@ function setProgress(queue, message) {
 
 const VIDEO_PATTERN = /\.(mp4|mov|webm|m4v|mkv)$/i;
 const MAX_VIDEO_BYTES = 1024 * 1024 * 1024;
+// decodeAudioData holds the whole file and its PCM in memory, and running out
+// crashes the tab, which no try/catch can catch. Frames have no such limit.
+const MAX_AUDIO_DECODE_BYTES = 500 * 1024 * 1024;
 const MAX_VIDEO_SECONDS = 1200;
 const FRAME_COUNT = 30;
 const FRAME_WIDTH = 1024;
@@ -250,7 +253,7 @@ async function prepareVideo(queue, file) {
         if (hasAudio) {
             setProgress(queue, `${file.name}: membaca suara`);
 
-            const samples = await decodeAudio(file);
+            const samples = file.size > MAX_AUDIO_DECODE_BYTES ? null : await decodeAudio(file);
 
             if (samples === null) {
                 ready.append('audio_failed', '1');
@@ -260,6 +263,8 @@ async function prepareVideo(queue, file) {
                         setProgress(queue, `${file.name}: transkripsi ${done} dari ${total}`);
                     });
                 } catch (error) {
+                    // A proxy timeout never reaches the controller, so say it here.
+                    ready.append('audio_failed', '1');
                     report(queue, `${file.name}: ${error.message}`);
                 }
             }

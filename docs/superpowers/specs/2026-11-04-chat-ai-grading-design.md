@@ -86,7 +86,7 @@ Browser yang menjalankan antrean: JavaScript mengunggah file satu per satu, lalu
 
 - Unggahan memakai POST biasa dengan CSRF, bukan `wire:model`, supaya banyak file tidak melewati `post_max_size` dan progres per file bisa ditampilkan.
 - Tugas gagal ditandai `failed` dengan pesan yang bisa dibaca dan tombol "Coba lagi"; antrean lanjut ke tugas berikutnya.
-- Menutup halaman menjeda antrean. Saat dibuka lagi, ada tombol lanjutkan. Tugas berstatus `processing` lebih dari 5 menit dikembalikan ke `queued`.
+- Menutup halaman menjeda antrean. Saat dibuka lagi, ada tombol lanjutkan. Tugas berstatus `processing` lebih dari 10 menit dikembalikan ke `queued` saat halaman dimuat ulang. *(semula 5 menit; dinaikkan karena penilaian dengan retry bisa berjalan sampai 8 menit)*
 - **Yang bisa dilanjutkan:** gambar dan dokumen sudah ada di server. Video yang belum selesai diolah hanya ada di browser, jadi dosen memilih ulang file-nya dan browser mencocokkannya lewat nama file. Video yang sudah selesai diolah tidak perlu file lagi. *(keputusan saya)*
 - **Batas hosting:** halaman membaca `upload_max_filesize` dan `post_max_size` dari server. Ukuran potongan suara dan jumlah frame per request menyesuaikan batas itu, dan batas 10 MB diturunkan kalau hosting lebih kecil, dengan pesan yang jelas. *(keputusan saya)*
 - **Batas waktu:** transkripsi tiap potongan suara dan penilaian adalah request terpisah, sehingga satu video tidak bergantung pada satu request panjang.
@@ -102,6 +102,7 @@ Cadangan:
 - **Transkripsi gagal atau endpoint tidak tersedia:** tugas **tidak dinilai otomatis**, karena skor isi ucapan dari visual saja akan terlihat sah padahal tidak. Status `failed` dengan pesan jelas, dan dosen memilih: menempel transkrip, atau secara sadar menilai tanpa transkrip (tugas diberi tanda "tanpa transkrip"). Dosen juga bisa memperbaiki transkrip kapan saja lalu menilai ulang. *(keputusan saya)*
 - **Jumlah gambar ditolak penyedia:** penilaian diulang sekali dengan frame setengahnya, sehingga tetap satu panggilan penilaian. *(keputusan saya)*
 - **Format tidak terbaca browser** (misalnya HEVC `.mov` di Chrome): pesan jelas untuk mengonversi ke MP4.
+- **File di atas 500 MB:** potongan gambar tetap diambil, tetapi suaranya tidak didekode di browser karena bisa menghabiskan memori dan membuat tab crash. Diperlakukan sebagai transkripsi gagal, sehingga dosen menempel transkrip. *(keputusan saya)*
 - **Video yang memang tanpa jalur suara:** terdeteksi di browser, dinilai dari visual, dengan tanda "tanpa transkrip". Berbeda dari transkripsi yang gagal.
 
 Batasan yang disadari: gestur dan intonasi tidak benar-benar tertangkap. Kecepatan bicara dihitung server dari jumlah kata dan durasi. Kriteria tentang gaya presentasi tetap dinilai AI, tetapi usulannya ditandai `perlu_dicek` supaya dosen memeriksanya. Yang dinilai dari video: isi ucapan, tampilan visual, gaya presentasi; editing tidak dinilai.

@@ -40,10 +40,7 @@ class BatchPage extends Component
 
     public function mount(int $batch): void
     {
-        $owned = $this->chatUser()->gradingBatches()->findOrFail($batch);
-        $owned->releaseStaleItems();
-
-        $this->batchId = $owned->getKey();
+        $this->batchId = $this->chatUser()->gradingBatches()->findOrFail($batch)->getKey();
     }
 
     public function openItem(int $id): void
@@ -167,6 +164,8 @@ class BatchPage extends Component
     public function render()
     {
         $batch = $this->batch();
+        $batch->releaseStaleItems();
+
         $items = $batch->items()->select(self::LIST_COLUMNS)->orderBy('id')->get();
         $items->each->setRelation('batch', $batch);
 

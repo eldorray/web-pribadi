@@ -326,4 +326,28 @@ class GradingVideoTest extends TestCase
         $this->postAudio($item, 0, $other)->assertNotFound();
         $this->as($other)->post(route('chat.grading.videos.ready', $item))->assertNotFound();
     }
+
+    #[Test]
+    public function ready_with_an_empty_transcript_does_not_count_as_transcribed(): void
+    {
+        $item = $this->video(['transcript' => null]);
+
+        $this->as()->post(route('chat.grading.videos.ready', $item))->assertOk();
+
+        $item->refresh();
+
+        $this->assertSame(GradingItem::FAILED, $item->status);
+        $this->assertSame(GradingItem::TRANSCRIPT_FAILED, $item->transcript_status);
+        $this->assertNotNull($item->error);
+    }
+
+    #[Test]
+    public function audio_failed_flag_keeps_the_servers_own_error(): void
+    {
+        $item = $this->video(['transcript_status' => GradingItem::TRANSCRIPT_FAILED, 'error' => 'Transkripsi gagal: kuota habis']);
+
+        $this->as()->post(route('chat.grading.videos.ready', $item), ['audio_failed' => 1])->assertOk();
+
+        $this->assertSame('Transkripsi gagal: kuota habis', $item->fresh()->error);
+    }
 }

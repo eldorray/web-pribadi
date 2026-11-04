@@ -111,8 +111,8 @@ class GradingModelsTest extends TestCase
         $stale = $this->item($batch, ['status' => GradingItem::PROCESSING]);
         $fresh = $this->item($batch, ['status' => GradingItem::PROCESSING]);
 
-        DB::table('grading_items')->where('id', $stale->id)->update(['updated_at' => now()->subMinutes(6)]);
-        DB::table('grading_items')->where('id', $fresh->id)->update(['updated_at' => now()->subMinutes(4)]);
+        DB::table('grading_items')->where('id', $stale->id)->update(['updated_at' => now()->subMinutes(11)]);
+        DB::table('grading_items')->where('id', $fresh->id)->update(['updated_at' => now()->subMinutes(9)]);
 
         $this->assertSame(1, $batch->releaseStaleItems());
         $this->assertSame(GradingItem::QUEUED, $stale->fresh()->status);

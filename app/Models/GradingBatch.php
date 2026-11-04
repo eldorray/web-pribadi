@@ -17,8 +17,12 @@ class GradingBatch extends Model
 {
     public const MAX_ITEMS = 100;
 
-    /** A browser that vanished mid-request leaves its item stuck this long. */
-    private const STALE_MINUTES = 5;
+    /**
+     * A browser that vanished mid-request leaves its item stuck this long. Must
+     * outlast the slowest real grading (four 120-second calls with retries), or
+     * a second tab could claim it again and pay the provider twice.
+     */
+    private const STALE_MINUTES = 10;
 
     protected $fillable = ['chat_user_id', 'name', 'rubric_snapshot', 'model'];
 

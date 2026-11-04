@@ -44,6 +44,8 @@
                 <small class="chat-grading__error chat-grading__row-note">{{ $item->error }}</small>
             @elseif ($item->status === 'preparing')
                 <small class="chat-grading__row-note chat-grading__meta">Pilih ulang file video ini kalau pengolahannya terhenti.</small>
+            @elseif ($item->status === 'processing')
+                <small class="chat-grading__row-note chat-grading__meta">Kalau terhenti, tugas ini kembali ke antrean setelah 10 menit saat halaman dimuat ulang.</small>
             @endif
         </li>
     @empty

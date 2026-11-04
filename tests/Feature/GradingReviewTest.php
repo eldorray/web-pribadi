@@ -371,4 +371,25 @@ class GradingReviewTest extends TestCase
 
         $this->page()->assertSee('Pilih ulang file video');
     }
+
+    #[Test]
+    public function refreshing_the_page_releases_a_stuck_item(): void
+    {
+        $item = $this->item(['status' => GradingItem::PROCESSING]);
+        $page = $this->page();
+
+        GradingItem::whereKey($item->id)->toBase()->update(['updated_at' => now()->subMinutes(11)]);
+
+        $page->call('$refresh');
+
+        $this->assertSame(GradingItem::QUEUED, $item->fresh()->status);
+    }
+
+    #[Test]
+    public function an_item_being_graded_explains_what_to_do_if_it_stalls(): void
+    {
+        $this->item(['status' => GradingItem::PROCESSING]);
+
+        $this->page()->assertSee('10 menit');
+    }
 }
