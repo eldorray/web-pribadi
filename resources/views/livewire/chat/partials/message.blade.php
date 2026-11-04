@@ -77,6 +77,10 @@
                     {!! $message->html() !!}
                 </div>
 
+                <a href="{{ route('chat.grading', ['dari_pesan' => $message->id]) }}" wire:navigate class="chat-save-rubric">
+                    <x-icon name="grading" :size="14" /> Simpan sebagai rubrik
+                </a>
+
                 @if ($message->is_truncated)
                     <p class="chat-truncated">Jawaban terpotong.</p>
                 @endif

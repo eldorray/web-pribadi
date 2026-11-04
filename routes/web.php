@@ -11,6 +11,8 @@ use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Projects\Index;
 use App\Livewire\Admin\Settings\General;
 use App\Livewire\Admin\Settings\SocialLinks;
+use App\Livewire\Chat\Grading\BatchPage;
+use App\Livewire\Chat\Grading\Index as GradingIndex;
 use App\Livewire\Chat\Page;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +33,8 @@ Route::prefix('chat')->group(function () {
 
     Route::middleware(ChatPin::class)->group(function () {
         Route::post('/stop', ChatStopController::class)->name('chat.stop');
+        Route::get('/penilaian', GradingIndex::class)->name('chat.grading');
+        Route::get('/penilaian/{batch}', BatchPage::class)->name('chat.grading.batch')->whereNumber('batch');
         Route::get('/file/{message}/{index}', ChatFileController::class)->name('chat.file');
         Route::get('/{conversation?}', Page::class)->name('chat')->whereNumber('conversation');
     });

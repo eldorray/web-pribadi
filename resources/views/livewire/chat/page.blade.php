@@ -39,6 +39,11 @@
             Chat baru
         </button>
 
+        <a href="{{ route('chat.grading') }}" wire:navigate class="chat-nav-link">
+            <x-icon name="grading" :size="18" />
+            Penilaian
+        </a>
+
         <nav class="chat-conversations" aria-label="Daftar percakapan">
             @forelse ($conversations as $item)
                 <div class="chat-conversation" x-data="{ renaming: false, title: @js($item->title) }"
