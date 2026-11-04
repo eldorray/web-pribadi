@@ -14,7 +14,7 @@
         </a>
     </header>
 
-    <section class="chat-grading__panel" data-grading-queue data-upload-limit="{{ $uploadLimit }}"
+    <section class="chat-grading__panel" data-grading-queue data-upload-limit="{{ $uploadLimit }}" data-max-files="{{ $maxFiles }}"
         data-store-url="{{ route('chat.grading.items.store', $batch) }}"
         data-video-url="{{ route('chat.grading.videos.store', $batch) }}" wire:ignore>
         <label class="chat-grading__secondary chat-grading__picker">

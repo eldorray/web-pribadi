@@ -44,4 +44,14 @@ class UploadLimitsTest extends TestCase
     {
         $this->assertSame(10485760, UploadLimits::effective('0', '0', 10485760));
     }
+
+    #[Test]
+    public function files_follows_the_ini_limit_and_never_reports_zero(): void
+    {
+        $this->assertSame((int) ini_get('max_file_uploads'), UploadLimits::files());
+
+        $this->assertSame(20, UploadLimits::fileCount('20'));
+        $this->assertSame(1, UploadLimits::fileCount('0'));
+        $this->assertSame(1, UploadLimits::fileCount(''));
+    }
 }

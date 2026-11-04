@@ -166,6 +166,13 @@ class FillTest(unittest.TestCase):
         self.assertEqual((ws["D5"].value, ws["E5"].value), (25, 10))
         self.assertEqual((ws["D6"].value, ws["E6"].value), (20, 9.5))
 
+    def test_finds_the_nim_anywhere_in_the_name(self):
+        write_csv(self.csv, [["PROJECT_AYU_222001", "25", "10", "35", "70", "", "disetujui"]])
+
+        self.run_script()
+
+        self.assertEqual(openpyxl.load_workbook(self.out)["3B"]["D5"].value, 25)
+
     def test_keeps_formulas_hyperlinks_and_the_original_file(self):
         write_csv(self.csv, [["222001 - AYU", "25", "10", "35", "70", "", "disetujui"]])
         before = self.xlsx.read_bytes()

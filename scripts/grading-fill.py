@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fill a copy of the class spreadsheet from a Chat AI Penilaian CSV export.
 
-Students are matched by the NIM at the start of their name, never by row order,
+Students are matched by the NIM in their name, never by row order,
 so a missing or failed student cannot shift grades onto someone else. Columns are
 matched by criterion name. Only approved grades are written. The original file is
 not touched, and scores already in the copy need --overwrite to change.
@@ -94,7 +94,8 @@ def main():
 
     for grade in grades:
         name = grade.get("Nama", "").lstrip("'")
-        match = re.match(r"\d+", name)
+        # Students name files their own way: the NIM may sit anywhere in the name.
+        match = re.search(r"\d{6,}", name)
         nim = match.group() if match else None
 
         if nim not in rows:

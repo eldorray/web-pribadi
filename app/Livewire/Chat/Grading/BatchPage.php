@@ -180,6 +180,7 @@ class BatchPage extends Component
             'maxScore' => $batch->maxScore(),
             'aiMaxScore' => $batch->aiMaxScore(),
             'uploadLimit' => UploadLimits::bytes(),
+            'maxFiles' => UploadLimits::files(),
         ])->layout('layouts.chat', ['title' => $batch->name.' · Penilaian']);
     }
 

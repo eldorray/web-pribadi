@@ -9,6 +9,7 @@ use App\Models\AiModel;
 use App\Models\ChatUser;
 use App\Models\GradingBatch;
 use App\Models\GradingItem;
+use App\Support\UploadLimits;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -226,5 +227,14 @@ class GradingUploadTest extends TestCase
             ->assertOk()
             ->assertSee('data-upload-limit', false)
             ->assertSee(route('chat.grading.items.store', $this->batch), false);
+    }
+
+    #[Test]
+    public function batch_page_exposes_the_hosts_file_count_limit(): void
+    {
+        $this->withCookie(ChatPin::COOKIE, ChatPin::cookieValue($this->user))
+            ->get(route('chat.grading.batch', $this->batch))
+            ->assertOk()
+            ->assertSee('data-max-files="'.UploadLimits::files().'"', false);
     }
 }

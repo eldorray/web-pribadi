@@ -117,7 +117,7 @@ function reportsNoAudioTrack(video) {
     }
 }
 
-async function sendFrames(video, urls, limit, onProgress) {
+async function sendFrames(video, urls, limit, maxFiles, onProgress) {
     const canvas = document.createElement('canvas');
     const scale = Math.min(1, FRAME_WIDTH / video.videoWidth);
     const count = Math.max(1, Math.min(FRAME_COUNT, Math.floor(video.duration)));
@@ -128,12 +128,14 @@ async function sendFrames(video, urls, limit, onProgress) {
     const context = canvas.getContext('2d');
     let batch = new FormData();
     let batchBytes = 0;
+    let batchFiles = 0;
 
     const flush = async () => {
         if (batchBytes === 0) return;
         await postForm(urls.frames_url, batch);
         batch = new FormData();
         batchBytes = 0;
+        batchFiles = 0;
     };
 
     for (let i = 0; i < count; i++) {
@@ -146,11 +148,13 @@ async function sendFrames(video, urls, limit, onProgress) {
 
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.75));
 
-        if (batchBytes > 0 && batchBytes + blob.size > limit * 0.8) await flush();
+        // PHP silently drops files past max_file_uploads, so size alone is not enough.
+        if (batchFiles >= maxFiles || (batchBytes > 0 && batchBytes + blob.size > limit * 0.8)) await flush();
 
         batch.append('frames[]', blob, `frame-${i}.jpg`);
         batch.append('at[]', String(at));
         batchBytes += blob.size;
+        batchFiles += 1;
         onProgress(i + 1, count);
     }
 
@@ -244,7 +248,7 @@ async function prepareVideo(queue, file) {
         const urls = await postForm(queue.dataset.videoUrl, meta);
 
         await refreshPage(queue);
-        await sendFrames(video, urls, limit, (done, total) => {
+        await sendFrames(video, urls, limit, Number(queue.dataset.maxFiles) || 10, (done, total) => {
             setProgress(queue, `${file.name}: mengambil gambar ${done} dari ${total}`);
         });
 

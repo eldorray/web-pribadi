@@ -17,6 +17,17 @@ final class UploadLimits
         return self::effective((string) ini_get('upload_max_filesize'), (string) ini_get('post_max_size'), self::CAP);
     }
 
+    /** How many files one request may carry. PHP drops the rest and warns. */
+    public static function files(): int
+    {
+        return self::fileCount((string) ini_get('max_file_uploads'));
+    }
+
+    public static function fileCount(string $value): int
+    {
+        return max(1, (int) $value);
+    }
+
     /** In PHP a limit of 0 means "no limit", so it never lowers the ceiling. */
     public static function effective(string $uploadMax, string $postMax, int $cap): int
     {
