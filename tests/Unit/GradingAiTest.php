@@ -448,4 +448,52 @@ class GradingAiTest extends TestCase
 
         (new GradingAi)->draftRubric('Isi: skor 10');
     }
+
+    private function humanOnlyBatch(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Pelafalan', 'description' => 'Bunyi jelas', 'max_score' => 30, 'human_only' => true],
+            ['name' => 'Bahasa', 'description' => 'Tata bahasa', 'max_score' => 20],
+        ]]]);
+    }
+
+    #[Test]
+    public function human_only_criterion_never_gets_an_ai_score(): void
+    {
+        $this->humanOnlyBatch();
+        // The model answering anyway must not matter.
+        $this->fakeReply($this->reply([29, 15]));
+
+        $result = (new GradingAi)->grade($this->essay());
+
+        $this->assertNull($result['criteria'][0]['score']);
+        $this->assertStringContainsString('dosen', $result['criteria'][0]['reason']);
+        $this->assertSame(15.0, $result['criteria'][1]['score']);
+    }
+
+    #[Test]
+    public function human_only_criterion_is_not_required_in_the_answer(): void
+    {
+        $this->humanOnlyBatch();
+        $reply = $this->reply();
+        unset($reply['criteria'][0]);
+        $this->fakeReply($reply);
+
+        $this->assertSame(15.0, (new GradingAi)->grade($this->essay())['criteria'][1]['score']);
+        Http::assertSentCount(1);
+    }
+
+    #[Test]
+    public function human_only_criterion_is_not_offered_to_the_model(): void
+    {
+        $this->humanOnlyBatch();
+        $this->fakeReply($this->reply());
+
+        (new GradingAi)->grade($this->essay());
+
+        $system = $this->sentMessages()[0]['content'];
+
+        $this->assertStringNotContainsString('Bunyi jelas', $system);
+        $this->assertStringContainsString('Tata bahasa', $system);
+    }
 }

@@ -94,7 +94,9 @@
                     @endif
                 </legend>
 
-                @if (isset($ai[$index]))
+                @if ($criterion['human_only'] ?? false)
+                    <p class="chat-grading__proposal"><b>Dinilai dosen.</b> AI tidak bisa mendengar suara, jadi tidak memberi usulan. Dengarkan videonya.</p>
+                @elseif (isset($ai[$index]))
                     <p class="chat-grading__proposal">
                         <b>Usulan AI: {{ \App\Models\GradingItem::formatScore((float) $ai[$index]['score']) }}/{{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }}.</b>
                         {{ $ai[$index]['reason'] }}

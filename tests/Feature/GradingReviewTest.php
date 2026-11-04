@@ -392,4 +392,52 @@ class GradingReviewTest extends TestCase
 
         $this->page()->assertSee('10 menit');
     }
+
+    private function humanOnlyBatch(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Pelafalan', 'description' => '', 'max_score' => 10, 'human_only' => true],
+            ['name' => 'Bahasa', 'description' => '', 'max_score' => 20],
+        ]]]);
+    }
+
+    private function humanOnlyItem(): GradingItem
+    {
+        return $this->item([
+            'final_scores' => [null, 15],
+            'ai_result' => [
+                'criteria' => [
+                    ['score' => null, 'reason' => 'Dinilai dosen', 'evidence' => '', 'needs_review' => false],
+                    ['score' => 15, 'reason' => 'Alasan bahasa', 'evidence' => '', 'needs_review' => false],
+                ],
+                'summary' => '',
+                'injection_attempt' => false,
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function ai_total_is_shown_against_the_criteria_the_ai_scored(): void
+    {
+        $this->humanOnlyBatch();
+        $this->humanOnlyItem();
+
+        $this->page()->assertSee('Usulan AI 15/20');
+    }
+
+    #[Test]
+    public function human_only_criterion_shows_no_ai_score_and_must_be_filled(): void
+    {
+        $this->humanOnlyBatch();
+        $item = $this->humanOnlyItem();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->assertSee('Dinilai dosen')
+            ->assertDontSee('Usulan AI: 0/10')
+            ->call('approve')
+            ->assertHasErrors('scores.0');
+
+        $this->assertNull($item->fresh()->approved_at);
+    }
 }

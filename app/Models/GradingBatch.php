@@ -54,6 +54,15 @@ class GradingBatch extends Model
         return (float) array_sum(array_column($this->criteria(), 'max_score'));
     }
 
+    /** What the AI's proposal is out of: criteria left to the lecturer don't count. */
+    public function aiMaxScore(): float
+    {
+        return (float) array_sum(array_map(
+            fn (array $criterion) => ($criterion['human_only'] ?? false) ? 0 : $criterion['max_score'],
+            $this->criteria(),
+        ));
+    }
+
     /** Two files with the same name are two submissions, so neither may vanish. */
     public function uniqueStudentName(string $base): string
     {

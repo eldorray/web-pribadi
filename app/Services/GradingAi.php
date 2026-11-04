@@ -26,6 +26,8 @@ class GradingAi
 
     private const INVALID = 'Jawaban AI tidak bisa dibaca. Coba nilai ulang.';
 
+    private const HUMAN_ONLY = 'Dinilai dosen: AI tidak bisa mendengar suara, jadi tidak memberi usulan.';
+
     public function __construct(private readonly AiClient $client = new AiClient) {}
 
     /**
@@ -62,7 +64,7 @@ class GradingAi
     }
 
     /**
-     * @return array{criteria: list<array{score: float, reason: string, evidence: string, needs_review: bool}>, summary: string, injection_attempt: bool}
+     * @return array{criteria: list<array{score: float|null, reason: string, evidence: string, needs_review: bool}>, summary: string, injection_attempt: bool}
      */
     public function grade(GradingItem $item): array
     {
@@ -106,6 +108,12 @@ class GradingAi
         $rubric = '';
 
         foreach ($batch->criteria() as $i => $criterion) {
+            // The model reads a transcript and pictures. It cannot hear, so it
+            // gets no chance to invent a pronunciation score that looks real.
+            if ($criterion['human_only'] ?? false) {
+                continue;
+            }
+
             $rubric .= "{$i}. {$criterion['name']} (skor maksimal {$criterion['max_score']}): {$criterion['description']}\n";
         }
 
@@ -308,6 +316,12 @@ class GradingAi
         $result = [];
 
         foreach ($criteria as $i => $criterion) {
+            if ($criterion['human_only'] ?? false) {
+                $result[] = ['score' => null, 'reason' => self::HUMAN_ONLY, 'evidence' => '', 'needs_review' => false];
+
+                continue;
+            }
+
             $row = $byIndex[$i] ?? null;
 
             if ($row === null || ! is_numeric($row['score'] ?? null)) {

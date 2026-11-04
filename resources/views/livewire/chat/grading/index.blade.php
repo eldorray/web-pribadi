@@ -162,6 +162,11 @@
                             <textarea wire:model="criteria.{{ $index }}.description" rows="3" maxlength="5000"></textarea>
                         </label>
 
+                        <label class="chat-grading__check">
+                            <input type="checkbox" wire:model="criteria.{{ $index }}.human_only" />
+                            <span>Dinilai dosen saja, AI tidak memberi usulan. Pilih ini untuk kriteria yang perlu didengar, seperti pelafalan, karena AI hanya membaca transkrip dan gambar.</span>
+                        </label>
+
                         <button type="button" class="chat-grading__link" wire:click="removeCriterion({{ $index }})">
                             Hapus kriteria
                         </button>

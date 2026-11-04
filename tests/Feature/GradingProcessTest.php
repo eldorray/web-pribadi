@@ -293,4 +293,21 @@ class GradingProcessTest extends TestCase
         $this->assertEquals([1, 2], $item->fresh()->final_scores);
         $this->assertSame(22.0, $item->fresh()->aiTotal());
     }
+
+    #[Test]
+    public function human_only_score_stays_empty_for_the_lecturer(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Pelafalan', 'description' => '', 'max_score' => 10, 'human_only' => true],
+            ['name' => 'Bahasa', 'description' => '', 'max_score' => 20],
+        ]]]);
+        $this->fakeGrades();
+        $item = $this->essay();
+
+        $this->grade($item)->assertOk();
+
+        $this->assertEquals([null, 15], $item->fresh()->final_scores);
+        $this->assertNull($item->fresh()->finalTotal());
+        $this->assertSame(15.0, $item->fresh()->aiTotal());
+    }
 }

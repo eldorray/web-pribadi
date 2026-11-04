@@ -18,7 +18,7 @@
                 <strong>{{ $item->student_name }}</strong>
                 <small>
                     @if ($item->aiTotal() !== null)
-                        Usulan AI {{ \App\Models\GradingItem::formatScore($item->aiTotal()) }}/{{ \App\Models\GradingItem::formatScore($maxScore) }}
+                        Usulan AI {{ \App\Models\GradingItem::formatScore($item->aiTotal()) }}/{{ \App\Models\GradingItem::formatScore($aiMaxScore) }}
                         ·
                     @endif
                     @if ($item->approved_at)

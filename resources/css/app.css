@@ -3412,3 +3412,18 @@ a, button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 767px) {
     .chat-grading__review.has-detail { grid-template-columns: minmax(0, 1fr); }
 }
+
+.chat-grading__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-ink-3);
+}
+
+.chat-grading__check input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}

@@ -141,4 +141,16 @@ class GradingExportTest extends TestCase
     {
         $this->get(route('chat.grading.export', $this->batch))->assertRedirect(route('chat.pin'));
     }
+
+    #[Test]
+    public function export_follows_the_name_order_so_nim_prefixes_sort(): void
+    {
+        $this->item(['student_name' => '1000000012 - Citra']);
+        $this->item(['student_name' => '1000000001 - Ayu']);
+
+        $rows = $this->rows();
+
+        $this->assertSame('1000000001 - Ayu', $rows[1][0]);
+        $this->assertSame('1000000012 - Citra', $rows[2][0]);
+    }
 }

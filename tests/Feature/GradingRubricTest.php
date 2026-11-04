@@ -120,7 +120,7 @@ class GradingRubricTest extends TestCase
         $rubric = GradingRubric::firstOrFail();
 
         $this->assertSame($this->user->id, $rubric->chat_user_id);
-        $this->assertEquals([['name' => 'Isi', 'description' => 'Jelas', 'max_score' => 25]], $rubric->criteria);
+        $this->assertEquals([['name' => 'Isi', 'description' => 'Jelas', 'max_score' => 25, 'human_only' => false]], $rubric->criteria);
     }
 
     #[Test]
@@ -415,5 +415,17 @@ class GradingRubricTest extends TestCase
         $batch = $this->batch($this->other);
 
         $this->asUser($this->user)->get(route('chat.grading.batch', $batch))->assertNotFound();
+    }
+
+    #[Test]
+    public function human_only_flag_is_saved_with_the_rubric(): void
+    {
+        $this->page()
+            ->set('name', 'Rubrik')
+            ->set('criteria', [['name' => 'Pelafalan', 'description' => '', 'max_score' => 30, 'needs_review' => false, 'human_only' => true]])
+            ->call('saveRubric')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(GradingRubric::firstOrFail()->criteria[0]['human_only']);
     }
 }

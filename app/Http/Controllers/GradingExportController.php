@@ -31,7 +31,7 @@ class GradingExportController extends Controller
             $header = ['Nama', ...array_column($criteria, 'name'), 'Total', 'Skala 0-100', 'Catatan', 'Status'];
             fputcsv($out, array_map($this->safeCell(...), $header), escape: '');
 
-            foreach ($batch->items()->orderBy('id')->cursor() as $item) {
+            foreach ($batch->items()->orderBy('student_name')->cursor() as $item) {
                 $item->setRelation('batch', $batch);
                 fputcsv($out, $this->row($item, count($criteria)), escape: '');
             }

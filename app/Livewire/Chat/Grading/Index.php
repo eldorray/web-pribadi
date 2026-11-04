@@ -37,7 +37,7 @@ class Index extends Component
 
     public string $guidance = '';
 
-    /** @var list<array{name: string, description: string, max_score: int|float|string, needs_review: bool}> */
+    /** @var list<array{name: string, description: string, max_score: int|float|string, needs_review: bool, human_only?: bool}> */
     public array $criteria = [];
 
     public string $importText = '';
@@ -147,6 +147,7 @@ class Index extends Component
                 'name' => trim((string) $row['name']),
                 'description' => trim((string) ($row['description'] ?? '')),
                 'max_score' => (float) $row['max_score'],
+                'human_only' => (bool) ($row['human_only'] ?? false),
             ], $this->criteria),
         ];
 
@@ -171,7 +172,7 @@ class Index extends Component
         $this->editingId = $rubric->id;
         $this->name = $rubric->name;
         $this->guidance = (string) $rubric->guidance;
-        $this->criteria = array_map(fn (array $row) => $row + ['needs_review' => false], $rubric->criteria);
+        $this->criteria = array_map(fn (array $row) => $row + ['needs_review' => false, 'human_only' => false], $rubric->criteria);
         $this->resetErrorBag();
     }
 
@@ -261,10 +262,10 @@ class Index extends Component
         $this->resetErrorBag();
     }
 
-    /** @return array{name: string, description: string, max_score: string, needs_review: bool} */
+    /** @return array{name: string, description: string, max_score: string, needs_review: bool, human_only: bool} */
     private function blankCriterion(): array
     {
-        return ['name' => '', 'description' => '', 'max_score' => '', 'needs_review' => false];
+        return ['name' => '', 'description' => '', 'max_score' => '', 'needs_review' => false, 'human_only' => false];
     }
 
     private function sourceMessage(int $id): ChatMessage
