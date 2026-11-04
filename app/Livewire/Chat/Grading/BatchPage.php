@@ -10,6 +10,7 @@ use App\Models\GradingItem;
 use App\Services\GradingFiles;
 use App\Support\UploadLimits;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -62,7 +63,9 @@ class BatchPage extends Component
 
     public function saveReview(): void
     {
-        $this->validateScores(required: false);
+        if (! $this->scoresAreValid(required: false)) {
+            return;
+        }
 
         $item = $this->ownedItem((int) $this->openItemId);
         $scores = $this->normalisedScores();
@@ -79,13 +82,18 @@ class BatchPage extends Component
     {
         $item = $this->ownedItem((int) $this->openItemId);
 
-        if (in_array($item->status, [GradingItem::PREPARING, GradingItem::QUEUED, GradingItem::PROCESSING], true)) {
-            $this->addError('scores', 'Tunggu sampai tugas ini selesai diproses.');
+        // A regrade waiting in line only replaces the proposal, so it blocks nothing.
+        $firstGradingPending = $item->ai_result === null && in_array($item->status, [GradingItem::QUEUED, GradingItem::PROCESSING], true);
+
+        if ($item->status === GradingItem::PREPARING || $firstGradingPending) {
+            $this->addError('approve', 'Tunggu sampai tugas ini selesai diproses.');
 
             return;
         }
 
-        $this->validateScores(required: true);
+        if (! $this->scoresAreValid(required: true)) {
+            return;
+        }
 
         $item->update([
             'final_scores' => $this->normalisedScores(),
@@ -172,6 +180,12 @@ class BatchPage extends Component
         $open = $this->openItemId !== null ? $batch->items()->find($this->openItemId) : null;
         $open?->setRelation('batch', $batch);
 
+        // Opened while the AI was still working: bring in its scores once they
+        // exist, but never over anything the lecturer has typed.
+        if ($open?->final_scores !== null && array_filter($this->scores, fn ($score) => $score !== null && $score !== '') === []) {
+            $this->scores = $open->final_scores;
+        }
+
         return view('livewire.chat.grading.batch', [
             'batch' => $batch,
             'items' => $items,
@@ -182,6 +196,53 @@ class BatchPage extends Component
             'uploadLimit' => UploadLimits::bytes(),
             'maxFiles' => UploadLimits::files(),
         ])->layout('layouts.chat', ['title' => $batch->name.' · Penilaian']);
+    }
+
+    /**
+     * The detail panel is long, so an error beside a score at the top can be off
+     * screen when the buttons are pressed. Name the criteria next to the buttons.
+     */
+    private function scoresAreValid(bool $required): bool
+    {
+        try {
+            $this->validateScores($required);
+        } catch (ValidationException $e) {
+            $this->setErrorBag($e->validator->errors());
+            $this->addError('approve', $this->scoreSummary(array_keys($e->validator->errors()->messages())));
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @param  list<string>  $fields */
+    private function scoreSummary(array $fields): string
+    {
+        $criteria = $this->batch()->criteria();
+        $missing = [];
+        $invalid = [];
+
+        foreach ($fields as $field) {
+            if (! preg_match('/^scores\.(\d+)$/', $field, $match) || ! isset($criteria[(int) $match[1]])) {
+                continue;
+            }
+
+            $score = $this->scores[(int) $match[1]] ?? null;
+
+            if ($score === null || $score === '') {
+                $missing[] = $criteria[(int) $match[1]]['name'];
+            } else {
+                $invalid[] = $criteria[(int) $match[1]]['name'];
+            }
+        }
+
+        $parts = array_filter([
+            $missing !== [] ? 'Isi skor: '.implode(', ', $missing).'.' : null,
+            $invalid !== [] ? 'Periksa skor: '.implode(', ', $invalid).'.' : null,
+        ]);
+
+        return 'Belum bisa disetujui. '.implode(' ', $parts);
     }
 
     private function validateScores(bool $required): void

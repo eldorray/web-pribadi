@@ -83,8 +83,6 @@
     @endif
 
     <form wire:submit="saveReview" class="chat-grading__form">
-        @error('scores') <p class="chat-grading__error">{{ $message }}</p> @enderror
-
         @foreach ($criteria as $index => $criterion)
             <fieldset class="chat-grading__criterion" wire:key="score-{{ $index }}">
                 <legend>
@@ -107,7 +105,12 @@
                 @endif
 
                 <label class="chat-grading__field chat-grading__score">
-                    <span>Skor final (maks. {{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }})</span>
+                    <span>
+                        Skor final (maks. {{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }})
+                        @if ($criterion['human_only'] ?? false)
+                            <span class="chat-grading__badge is-danger">Wajib diisi dosen</span>
+                        @endif
+                    </span>
                     <input type="number" min="0" max="{{ $criterion['max_score'] }}" step="any" inputmode="decimal"
                         wire:model="scores.{{ $index }}" />
                     @error("scores.$index") <small class="chat-grading__error">{{ $message }}</small> @enderror
@@ -119,6 +122,8 @@
             <span>Catatan dosen</span>
             <textarea wire:model="note" rows="3" maxlength="5000"></textarea>
         </label>
+
+        @error('approve') <p class="chat-grading__alert" role="alert">{{ $message }}</p> @enderror
 
         <div class="chat-grading__actions">
             <button type="button" class="chat-grading__primary" wire:click="approve">

@@ -3405,7 +3405,9 @@ a, button { -webkit-tap-highlight-color: transparent; }
     overflow-wrap: anywhere;
 }
 
-.chat-grading__score { max-width: 14rem; }
+.chat-grading__score input { max-width: 14rem; }
+
+.chat-grading__badge { white-space: nowrap; }
 
 .chat-grading__actions { flex-wrap: wrap; }
 

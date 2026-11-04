@@ -158,13 +158,98 @@ class GradingReviewTest extends TestCase
     }
 
     #[Test]
-    public function an_item_still_being_processed_cannot_be_approved(): void
+    public function an_item_the_ai_has_not_finished_cannot_be_approved(): void
     {
-        $item = $this->item(['status' => GradingItem::PROCESSING]);
+        $item = $this->item(['status' => GradingItem::PROCESSING, 'ai_result' => null, 'final_scores' => null]);
 
-        $this->page()->call('openItem', $item->id)->set('scores', [5, 5])->call('approve');
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('scores', [5, 5])
+            ->call('approve')
+            ->assertHasErrors('approve');
 
         $this->assertNull($item->fresh()->approved_at);
+    }
+
+    #[Test]
+    public function a_video_still_being_prepared_cannot_be_approved(): void
+    {
+        $item = $this->item(['status' => GradingItem::PREPARING, 'ai_result' => null, 'final_scores' => null]);
+
+        $this->page()->call('openItem', $item->id)->set('scores', [5, 5])->call('approve')->assertHasErrors('approve');
+
+        $this->assertNull($item->fresh()->approved_at);
+    }
+
+    #[Test]
+    public function an_item_waiting_for_a_regrade_can_still_be_approved(): void
+    {
+        $item = $this->item(['status' => GradingItem::QUEUED]);
+
+        $this->page()->call('openItem', $item->id)->set('scores', [5, 5])->call('approve')->assertHasNoErrors();
+
+        $this->assertNotNull($item->fresh()->approved_at);
+    }
+
+    #[Test]
+    public function approval_failure_names_the_missing_criteria_next_to_the_button(): void
+    {
+        $this->humanOnlyBatch();
+        $item = $this->humanOnlyItem();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->call('approve')
+            ->assertHasErrors(['approve', 'scores.0'])
+            ->assertSee('Belum bisa disetujui')
+            ->assertSee('Pelafalan');
+    }
+
+    #[Test]
+    public function approval_failure_for_a_score_over_the_maximum_also_names_it(): void
+    {
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('scores', [99, 15])
+            ->call('approve')
+            ->assertHasErrors(['approve', 'scores.0'])
+            ->assertSee('Periksa skor: Isi');
+
+        $this->assertNull($item->fresh()->approved_at);
+    }
+
+    #[Test]
+    public function reopening_after_a_grade_finished_shows_the_new_scores(): void
+    {
+        $item = $this->item(['status' => GradingItem::PROCESSING, 'ai_result' => null, 'final_scores' => null]);
+
+        $page = $this->page()->call('openItem', $item->id);
+
+        $item->update(['status' => GradingItem::READY, 'ai_result' => $this->aiResult(), 'final_scores' => [7, 15]]);
+
+        $page->call('$refresh')->assertSet('scores', [7, 15]);
+    }
+
+    #[Test]
+    public function a_refresh_keeps_scores_the_lecturer_is_typing(): void
+    {
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('scores', [9, 15])
+            ->call('$refresh')
+            ->assertSet('scores', [9, 15]);
+    }
+
+    #[Test]
+    public function required_lecturer_criterion_says_so_on_the_form(): void
+    {
+        $this->humanOnlyBatch();
+
+        $this->page()->call('openItem', $this->humanOnlyItem()->id)->assertSee('Wajib diisi dosen');
     }
 
     #[Test]

@@ -326,7 +326,14 @@ async function uploadFiles(queue, files) {
  * Items that answered 409 are remembered, or a stuck one would loop forever.
  */
 async function gradeQueued(queue) {
-    if (queue.dataset.running === '1') return;
+    if (queue.dataset.running === '1') {
+        // This run has already tried every row it knows; start over afterwards so
+        // an item queued meanwhile, by "Nilai ulang", is not left waiting.
+        queue.dataset.rerun = '1';
+
+        return;
+    }
+
     queue.dataset.running = '1';
 
     const attempted = new Set();
@@ -354,6 +361,11 @@ async function gradeQueued(queue) {
     } finally {
         delete queue.dataset.running;
         setProgress(queue, '');
+
+        if (queue.dataset.rerun === '1') {
+            delete queue.dataset.rerun;
+            gradeQueued(queue);
+        }
     }
 }
 
