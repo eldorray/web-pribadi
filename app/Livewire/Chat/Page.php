@@ -12,6 +12,7 @@ use App\Services\AiClient;
 use App\Services\AiException;
 use App\Services\AttachmentExtractor;
 use App\Services\ChatFiles;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -28,8 +29,22 @@ class Page extends Component
 {
     use WithFileUploads;
 
-    /** Rough prompt budget; oldest turns are dropped past this. */
-    private const HISTORY_CHARS = 100000;
+    /**
+     * Rough prompt budget in text characters; oldest turns are dropped past
+     * this. Twice AttachmentExtractor's per-file cap, so one long document
+     * survives follow-up questions. Models with a smaller context answer with a
+     * readable provider error rather than silently losing the document.
+     */
+    private const HISTORY_CHARS = 400000;
+
+    /** @var array<string, array{label: string, hint: string}> */
+    private const IMAGE_SIZES = [
+        'auto' => ['label' => 'Otomatis', 'hint' => 'Ikuti prompt'],
+        '1:1' => ['label' => 'Persegi', 'hint' => '1024 × 1024'],
+        '4:5' => ['label' => 'Potret', 'hint' => '1024 × 1280'],
+        '16:9' => ['label' => 'Lanskap', 'hint' => '1280 × 720'],
+        '9:16' => ['label' => 'Story', 'hint' => '720 × 1280'],
+    ];
 
     public ?int $conversationId = null;
 
@@ -40,6 +55,8 @@ class Page extends Component
     public ?string $effort = null;
 
     public bool $imageMode = false;
+
+    public string $imageSize = 'auto';
 
     /** @var array<int, TemporaryUploadedFile> */
     public array $uploads = [];
@@ -61,10 +78,13 @@ class Page extends Component
 
     public function send(): void
     {
+        Cache::forget($this->chatUser()->stopCacheKey());
+
         $this->validate([
             'prompt' => ['nullable', 'string', 'max:20000'],
             'uploads' => ['array', 'max:5'],
             'uploads.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf,docx', 'max:10240'],
+            'imageSize' => ['required', 'in:'.implode(',', array_keys(self::IMAGE_SIZES))],
         ], [
             'prompt.max' => 'Pesan terlalu panjang.',
             'uploads.max' => 'Maksimal 5 lampiran per pesan.',
@@ -90,14 +110,15 @@ class Page extends Component
             return;
         }
 
-        $attachments = $this->storeUploads();
-
-        if (! $this->imageMode && ! $model->supports_vision && $this->hasImages($attachments)) {
-            ChatFiles::deleteForMessage(ChatMessage::make(['attachments' => $attachments]));
+        // Before storing: store() moves the temporary files, and the rejected
+        // uploads have to stay usable if the user switches to a vision model.
+        if (! $this->imageMode && ! $model->supports_vision && $this->uploadsIncludeImage()) {
             $this->addError('uploads', 'Model ini tidak bisa membaca gambar. Pilih model lain.');
 
             return;
         }
+
+        $attachments = $this->storeUploads();
 
         $conversation = $this->conversation();
         $isNew = $conversation->wasRecentlyCreated;
@@ -132,6 +153,8 @@ class Page extends Component
         $message = $this->ownedMessage($messageId);
         abort_unless($message->is_error, 404);
 
+        Cache::forget($this->chatUser()->stopCacheKey());
+
         $conversation = $message->conversation;
         $message->delete();
 
@@ -150,9 +173,21 @@ class Page extends Component
         $this->uploads = array_values($this->uploads);
     }
 
-    public function toggleImageMode(): void
+    public function setMode(string $mode): void
     {
-        $this->imageMode = ! $this->imageMode;
+        if (! in_array($mode, ['chat', 'image'], true)) {
+            return;
+        }
+
+        $nextImageMode = $mode === 'image';
+
+        if ($this->imageMode === $nextImageMode) {
+            return;
+        }
+
+        $this->imageMode = $nextImageMode;
+        $this->uploads = [];
+        $this->resetErrorBag();
 
         if ($this->imageMode) {
             $this->modelId = AiModel::defaultImage()?->model_id;
@@ -164,6 +199,20 @@ class Page extends Component
         $model = AiModel::defaultChat();
         $this->modelId = $model?->model_id;
         $this->effort = $model?->supports_effort ? 'medium' : null;
+    }
+
+    public function setImageSize(string $size): void
+    {
+        if (array_key_exists($size, self::IMAGE_SIZES)) {
+            $this->imageSize = $size;
+        }
+    }
+
+    public function useStarter(string $prompt, string $mode = 'chat'): void
+    {
+        $this->setMode($mode);
+        $this->prompt = Str::limit(trim($prompt), 20000, '');
+        $this->dispatch('chat-focus-composer');
     }
 
     public function updatedModelId(): void
@@ -235,6 +284,7 @@ class Page extends Component
             'supportsEffort' => (bool) $selected?->supports_effort,
             'supportsVision' => (bool) $selected?->supports_vision,
             'efforts' => ['low' => 'Ringkas', 'medium' => 'Seimbang', 'high' => 'Mendalam'],
+            'imageSizes' => self::IMAGE_SIZES,
         ])->layout('layouts.chat', ['title' => $conversation?->title ?? 'Chat']);
     }
 
@@ -254,17 +304,21 @@ class Page extends Component
         $chatUser = $this->chatUser();
 
         if ($this->imageMode) {
-            $request = (string) $conversation->messages()->where('role', 'user')->latest('id')->value('content');
+            $request = (string) $conversation->messages()->where('role', 'user')->reorder('id', 'desc')->value('content');
+
+            $ratio = $this->imageSize === 'auto'
+                ? AiClient::requestedAspectRatio($request)
+                : $this->imageSize;
 
             // The user writes an instruction ("buatkan flyer ppdb"), not an image
             // description. Handing that straight to the image model is what makes
             // it drift, so a chat model rewrites it first when one is available.
+            // The selected canvas is part of planning, not merely a render hint.
             $planner = AiModel::defaultChat();
-            $prompt = ($planner !== null ? $client->planImagePrompt($request, $planner->model_id) : null) ?? $request;
-            $ratio = AiClient::requestedAspectRatio($request);
+            $prompt = ($planner !== null ? $client->planImagePrompt($request, $planner->model_id, $ratio) : null) ?? $request;
 
             try {
-                $bytes = $client->generateImage($model->model_id, $prompt, $ratio);
+                $result = $client->generateImageResult($model->model_id, $prompt, $ratio);
             } catch (AiException $e) {
                 $this->storeError($conversation, $e->getMessage());
 
@@ -278,7 +332,7 @@ class Page extends Component
             }
 
             $path = "chat/{$chatUser->getKey()}/gen-".Str::uuid().'.png';
-            Storage::disk('local')->put($path, $bytes);
+            Storage::disk('local')->put($path, $result['bytes']);
 
             $conversation->messages()->create([
                 'role' => 'assistant',
@@ -286,6 +340,9 @@ class Page extends Component
                 'content' => $prompt,
                 'model' => $model->model_id,
                 'image_path' => $path,
+                'image_requested_ratio' => $result['requested_ratio'],
+                'image_used_ratio' => $result['used_ratio'],
+                'image_fell_back' => $result['fell_back'],
             ]);
             $conversation->touch();
 
@@ -296,11 +353,11 @@ class Page extends Component
 
         $onDelta = function (string $chunk) use ($streaming): void {
             if ($streaming) {
-                $this->stream($chunk, el: '#chat-stream');
+                // Livewire inserts this as HTML. Model output is untrusted, and
+                // the saved message is sanitised only once it is complete.
+                $this->stream(e($chunk), el: '#chat-stream');
             }
         };
-
-        $shouldStop = fn (): bool => connection_aborted() === 1;
 
         try {
             $result = $client->chat(
@@ -308,12 +365,14 @@ class Page extends Component
                 $model->model_id,
                 $model->supports_effort ? $this->effort : null,
                 $onDelta,
-                $shouldStop,
+                $this->stopSignal(),
             );
         } catch (AiException $e) {
             $this->storeError($conversation, $e->getMessage());
 
             return;
+        } finally {
+            Cache::forget($chatUser->stopCacheKey());
         }
 
         $content = trim($result['content']);
@@ -331,6 +390,34 @@ class Page extends Component
         ]);
 
         $conversation->touch();
+    }
+
+    /**
+     * True once the tab is gone or the stop button was pressed. The cache is
+     * consulted at most four times a second because this runs per stream line.
+     *
+     * @return callable(): bool
+     */
+    private function stopSignal(): callable
+    {
+        $key = $this->chatUser()->stopCacheKey();
+        $nextCheck = 0.0;
+
+        return function () use ($key, &$nextCheck): bool {
+            if (connection_aborted() === 1) {
+                return true;
+            }
+
+            $now = microtime(true);
+
+            if ($now < $nextCheck) {
+                return false;
+            }
+
+            $nextCheck = $now + 0.25;
+
+            return Cache::has($key);
+        };
     }
 
     private function storeError(ChatConversation $conversation, string $message): void
@@ -426,6 +513,11 @@ class Page extends Component
             array_shift($out);
         }
 
+        // Some providers reject a conversation that opens with the assistant.
+        while (count($out) > 1 && $out[0]['role'] === 'assistant') {
+            array_shift($out);
+        }
+
         return array_values($out);
     }
 
@@ -473,8 +565,8 @@ class Page extends Component
             }
 
             foreach ((array) $content as $part) {
+                // Text only: one photo's base64 would otherwise use up the budget.
                 $size += isset($part['text']) ? strlen((string) $part['text']) : 0;
-                $size += isset($part['image_url']['url']) ? strlen((string) $part['image_url']['url']) : 0;
             }
         }
 
@@ -496,7 +588,9 @@ class Page extends Component
 
         foreach ($this->uploads as $upload) {
             $path = $upload->store("chat/{$chatUser->getKey()}", 'local');
-            $mime = (string) ($upload->getMimeType() ?? 'application/octet-stream');
+            // Not $upload->getMimeType(): store() moved the temporary file away,
+            // so outside tests it would come back empty.
+            $mime = $disk->mimeType($path) ?: 'application/octet-stream';
 
             $stored[] = [
                 'path' => $path,
@@ -509,13 +603,10 @@ class Page extends Component
         return $stored;
     }
 
-    /**
-     * @param  list<array{path: string, name: string, mime: string, text: ?string}>  $attachments
-     */
-    private function hasImages(array $attachments): bool
+    private function uploadsIncludeImage(): bool
     {
-        foreach ($attachments as $attachment) {
-            if (str_starts_with($attachment['mime'], 'image/')) {
+        foreach ($this->uploads as $upload) {
+            if (str_starts_with($upload->getMimeType(), 'image/')) {
                 return true;
             }
         }

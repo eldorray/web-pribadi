@@ -41,13 +41,30 @@
                 </div>
             @elseif ($message->image_path)
                 <figure class="chat-generated">
-                    <img src="{{ route('chat.file', ['message' => $message->id, 'index' => 'image']) }}"
-                        alt="Gambar hasil buatan" loading="lazy" />
-                    <a href="{{ route('chat.file', ['message' => $message->id, 'index' => 'image', 'download' => 1]) }}"
-                        class="chat-generated__download">
-                        <x-icon name="download" :size="14" /> Unduh
-                    </a>
+                    <div class="chat-generated__canvas">
+                        <img src="{{ route('chat.file', ['message' => $message->id, 'index' => 'image']) }}"
+                            alt="Gambar hasil buatan" loading="lazy" />
+                    </div>
+                    <figcaption class="chat-generated__meta">
+                        <div>
+                            @if ($message->image_used_ratio)
+                                <span class="chat-generated__ratio">{{ $message->image_used_ratio }}</span>
+                            @endif
+                            <span>Dibuat dengan {{ $message->model }}</span>
+                        </div>
+                        <a href="{{ route('chat.file', ['message' => $message->id, 'index' => 'image', 'download' => 1]) }}"
+                            class="chat-generated__download">
+                            <x-icon name="download" :size="15" /> Unduh gambar
+                        </a>
+                    </figcaption>
                 </figure>
+
+                @if ($message->image_fell_back)
+                    <p class="chat-generated__notice">
+                        Ukuran {{ $message->image_requested_ratio }} tidak didukung penyedia. Gambar dibuat dalam
+                        {{ $message->image_used_ratio ?: 'ukuran bawaan' }}.
+                    </p>
+                @endif
 
                 @if (trim((string) $message->content) !== '')
                     <details class="chat-generated__prompt">

@@ -1,21 +1,36 @@
 @php
     $messages = $conversation?->messages ?? collect();
+    $activeModel = $models->firstWhere('model_id', $modelId);
 @endphp
 
-<div class="chat-app" x-data="{ drawer: false }" @keydown.escape.window="drawer = false">
+<div class="chat-app" x-data="{
+        drawer: false,
+        collapsed: window.chatSidebarCollapsed(),
+        toggleSidebar() {
+            this.collapsed = ! this.collapsed;
+            document.documentElement.classList.toggle('chat-sidebar-collapsed', this.collapsed);
+            try { localStorage.setItem('chat-sidebar', this.collapsed ? 'collapsed' : 'open'); } catch (_) {}
+            this.$nextTick(() => this.$refs[this.collapsed ? 'sidebarOpen' : 'sidebarClose'].focus());
+        },
+    }" @keydown.escape.window="drawer = false">
     {{-- ── Sidebar ───────────────────────────────────────────────────────── --}}
     <div class="chat-drawer-scrim" x-show="drawer" x-transition.opacity @click="drawer = false"
         style="display: none;"></div>
 
-    <aside class="chat-sidebar" :class="drawer ? 'is-open' : ''">
+    <aside id="chat-sidebar" class="chat-sidebar" :class="drawer ? 'is-open' : ''">
         <div class="chat-sidebar__top">
             <a href="{{ route('chat') }}" wire:navigate class="chat-brand">
-                <x-icon name="auto_awesome" :size="18" />
-                <span>Chat</span>
+                <span class="chat-brand__mark"><x-icon name="smart_toy" :size="18" /></span>
+                <span><strong>Chat AI</strong><small>Ruang pribadi</small></span>
             </a>
             <button type="button" class="chat-icon-btn chat-only-mobile" @click="drawer = false"
                 aria-label="Tutup daftar">
                 <x-icon name="close" :size="18" />
+            </button>
+            <button type="button" class="chat-icon-btn chat-only-desktop" x-ref="sidebarClose" @click="toggleSidebar()"
+                :aria-expanded="(!collapsed).toString()" aria-controls="chat-sidebar" aria-label="Sembunyikan sidebar"
+                title="Sembunyikan sidebar">
+                <x-icon name="left_panel_close" :size="20" />
             </button>
         </div>
 
@@ -74,21 +89,71 @@
     <div class="chat-main">
         <header class="chat-topbar">
             <button type="button" class="chat-icon-btn chat-only-mobile" @click="drawer = true"
-                aria-label="Buka daftar percakapan">
+                :aria-expanded="drawer.toString()" aria-controls="chat-sidebar" aria-label="Buka daftar percakapan">
                 <x-icon name="menu" :size="20" />
             </button>
-            <p class="chat-topbar__title">{{ $conversation?->title ?? 'Chat baru' }}</p>
-            <span class="chat-topbar__model">{{ $imageMode ? 'Gambar' : ($modelId ?: 'model') }}</span>
+            <button type="button" class="chat-icon-btn chat-sidebar-reopen" x-ref="sidebarOpen" @click="toggleSidebar()"
+                :aria-expanded="(!collapsed).toString()" aria-controls="chat-sidebar" aria-label="Tampilkan sidebar"
+                title="Tampilkan sidebar">
+                <x-icon name="left_panel_open" :size="20" />
+            </button>
+            <div class="chat-topbar__copy">
+                <p class="chat-topbar__title">{{ $conversation?->title ?? 'Chat baru' }}</p>
+                <p class="chat-topbar__status">
+                    {{ $imageMode ? 'Studio gambar' : 'Percakapan' }}
+                    @if ($activeModel)
+                        <span aria-hidden="true">·</span> {{ $activeModel->label }}
+                    @endif
+                </p>
+            </div>
+            <span class="chat-topbar__mode @if ($imageMode) is-image @endif">
+                <x-icon :name="$imageMode ? 'image' : 'smart_toy'" :size="14" />
+                {{ $imageMode ? 'Gambar' : 'Chat' }}
+            </span>
         </header>
 
         <div class="chat-scroll" id="chat-thread" data-chat-scroll>
             @if ($messages->isEmpty())
                 <div class="chat-empty">
                     <div class="chat-empty__mark" aria-hidden="true">
-                        <x-icon name="auto_awesome" :size="26" />
+                        <x-icon :name="$imageMode ? 'image' : 'smart_toy'" :size="26" />
                     </div>
-                    <h1 class="chat-empty__title">Halo, {{ $chatUser->name }}.</h1>
-                    <p class="chat-empty__lede">Mau menulis apa hari ini?</p>
+                    <h1 class="chat-empty__title">
+                        {{ $imageMode ? 'Bayangkan. Lalu buat.' : 'Halo, '.$chatUser->name.'.' }}
+                    </h1>
+                    <p class="chat-empty__lede">
+                        {{ $imageMode
+                            ? 'Pilih ukuran, jelaskan visualnya, lalu AI menyusun prompt yang lebih presisi.'
+                            : 'Tanyakan apa saja, olah dokumen, atau mulai membuat gambar.' }}
+                    </p>
+
+                    <div class="chat-starters" aria-label="Contoh permintaan">
+                        @if ($imageMode)
+                            <button type="button"
+                                wire:click='useStarter("Buat flyer PPDB sekolah yang modern, warna hijau dan emas, judul besar PENERIMAAN PESERTA DIDIK BARU", "image")'>
+                                <span>Flyer PPDB</span><small>Poster promosi sekolah</small>
+                            </button>
+                            <button type="button"
+                                wire:click='useStarter("Buat visual marketing untuk website absensi sekolah, tampilkan dashboard pada laptop dan ponsel", "image")'>
+                                <span>Visual marketing</span><small>Grafis untuk web</small>
+                            </button>
+                            <button type="button"
+                                wire:click='useStarter("Buat ilustrasi ruang kelas modern yang hangat dengan siswa Indonesia sedang belajar", "image")'>
+                                <span>Ilustrasi kelas</span><small>Suasana pendidikan</small>
+                            </button>
+                        @else
+                            <button type="button" wire:click='useStarter("Bantu saya menyusun pengumuman yang ringkas dan profesional")'>
+                                <span>Tulis pengumuman</span><small>Rapi dan profesional</small>
+                            </button>
+                            <button type="button" wire:click='useStarter("Ringkas dokumen ini dan ambil poin pentingnya")'>
+                                <span>Ringkas dokumen</span><small>Lampirkan PDF atau DOCX</small>
+                            </button>
+                            <button type="button"
+                                wire:click='useStarter("Buat flyer PPDB sekolah yang modern", "image")'>
+                                <span>Buat gambar</span><small>Flyer, poster, ilustrasi</small>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             @else
                 <div class="chat-thread">
@@ -98,25 +163,62 @@
                 </div>
             @endif
 
+            {{-- Immediate send feedback lives here until Livewire renders the saved message. --}}
+            <div class="chat-pending-slot" data-chat-pending wire:ignore aria-live="polite"></div>
+
             {{-- Livewire streams answer fragments into this element. --}}
             <div id="chat-stream" class="chat-stream" aria-live="polite"></div>
 
-            <div class="chat-thinking" wire:loading.delay.short wire:target="send,retry">
-                <span class="chat-thinking__dots"><span></span><span></span><span></span></span>
-                Sedang berpikir…
+            <div class="chat-thinking" role="status" wire:loading.flex.delay.short wire:target="send,retry">
+                <span class="chat-thinking__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span>{{ $imageMode ? 'Sedang membuat gambar…' : 'Sedang berpikir…' }}</span>
             </div>
         </div>
 
         {{-- ── Composer ─────────────────────────────────────────────────── --}}
         <div class="chat-composer-wrap">
-            <form wire:submit="send" class="chat-composer">
+            <div class="chat-mode-switch" role="group" aria-label="Mode kerja">
+                <button type="button" wire:click="setMode('chat')" @class(['is-active' => !$imageMode])
+                    aria-pressed="{{ $imageMode ? 'false' : 'true' }}">
+                    <x-icon name="smart_toy" :size="16" />
+                    Chat
+                </button>
+                <button type="button" wire:click="setMode('image')" @class(['is-active' => $imageMode])
+                    aria-pressed="{{ $imageMode ? 'true' : 'false' }}">
+                    <x-icon name="image" :size="16" />
+                    Buat gambar
+                </button>
+            </div>
+
+            <form wire:submit="send" class="chat-composer" data-chat-form>
+                @if ($imageMode)
+                    <div class="chat-image-options">
+                        <div class="chat-image-options__intro">
+                            <span>Ukuran kanvas</span>
+                            <small>Otomatis atau pilih ukuran</small>
+                        </div>
+                        <div class="chat-size-options" role="radiogroup" aria-label="Ukuran gambar">
+                            @foreach ($imageSizes as $value => $size)
+                                <button type="button" role="radio"
+                                    aria-checked="{{ $imageSize === $value ? 'true' : 'false' }}"
+                                    wire:click="setImageSize('{{ $value }}')"
+                                    @class(['chat-size-option', 'is-active' => $imageSize === $value])>
+                                    <span class="chat-size-option__shape chat-size-option__shape--{{ str_replace(':', '-', $value) }}"
+                                        aria-hidden="true"></span>
+                                    <span><strong>{{ $size['label'] }}</strong><small>{{ $size['hint'] }}</small></span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if ($uploads !== [])
                     <div class="chat-chips">
                         @foreach ($uploads as $index => $upload)
                             <span class="chat-chip" wire:key="upload-{{ $index }}">
                                 <span class="chat-chip__name">{{ $upload->getClientOriginalName() }}</span>
                                 <button type="button" wire:click="removeUpload({{ $index }})"
-                                    aria-label="Hapus lampiran">
+                                    aria-label="Hapus lampiran {{ $upload->getClientOriginalName() }}">
                                     <x-icon name="close" :size="12" />
                                 </button>
                             </span>
@@ -124,22 +226,38 @@
                     </div>
                 @endif
 
-                <textarea wire:model="prompt" data-chat-input rows="1"
-                    placeholder="{{ $imageMode ? 'Deskripsikan gambar yang ingin dibuat…' : 'Tulis pesan…' }}" maxlength="20000"
-                    aria-label="Pesan" class="chat-input"></textarea>
+                <div class="chat-input-row">
+                    <textarea wire:model="prompt" data-chat-input rows="1" enterkeyhint="send"
+                        placeholder="{{ $imageMode ? 'Contoh: flyer PPDB hijau-emas, judul besar, suasana sekolah modern…' : 'Tulis pesan…' }}"
+                        maxlength="20000" aria-label="{{ $imageMode ? 'Deskripsi gambar' : 'Pesan' }}"
+                        class="chat-input"></textarea>
+
+                    <button type="submit" class="chat-send" data-chat-send
+                        aria-label="Kirim" title="Kirim">
+                        <x-icon name="arrow_upward" :size="18" />
+                    </button>
+                    {{-- Image generation is one blocking call; it cannot be interrupted. --}}
+                    @unless ($imageMode)
+                        <button type="button" class="chat-stop" data-chat-stop data-stop-url="{{ route('chat.stop') }}"
+                            aria-label="Hentikan proses" title="Hentikan proses" hidden>
+                            <x-icon name="stop" :size="17" />
+                        </button>
+                    @endunless
+                </div>
 
                 <div class="chat-toolbar">
                     <div class="chat-toolbar__left">
-                        <label class="chat-icon-btn" title="Lampirkan berkas"
-                            @class(['is-disabled' => $imageMode || !$supportsVision])>
-                            <x-icon name="attach_file" :size="18" />
-                            <input type="file" wire:model="uploads" multiple class="sr-only"
-                                accept=".jpg,.jpeg,.png,.webp,.pdf,.docx"
-                                @disabled($imageMode || !$supportsVision) />
-                        </label>
+                        @if (!$imageMode)
+                            <label class="chat-attachment" title="Lampirkan berkas">
+                                <x-icon name="attach_file" :size="17" />
+                                <span>Lampiran</span>
+                                <input type="file" wire:model="uploads" multiple class="sr-only"
+                                    accept="{{ $supportsVision ? '.jpg,.jpeg,.png,.webp,.pdf,.docx' : '.pdf,.docx' }}" />
+                            </label>
+                        @endif
 
                         <div class="chat-select-wrap">
-                            <select wire:model.live="modelId" class="chat-select" aria-label="Model">
+                            <select wire:model.live="modelId" class="chat-select" aria-label="Model AI">
                                 @forelse ($models as $model)
                                     <option value="{{ $model->model_id }}">{{ $model->label }}</option>
                                 @empty
@@ -151,7 +269,7 @@
 
                         @if ($supportsEffort && !$imageMode)
                             <div class="chat-select-wrap">
-                                <select wire:model="effort" class="chat-select" aria-label="Kedalaman">
+                                <select wire:model="effort" class="chat-select" aria-label="Kedalaman jawaban">
                                     @foreach ($efforts as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
                                     @endforeach
@@ -159,20 +277,9 @@
                                 <x-icon name="expand_more" :size="16" class="chat-select__caret" />
                             </div>
                         @endif
-
-                        <button type="button" wire:click="toggleImageMode"
-                            class="chat-mode-btn @if ($imageMode) is-active @endif"
-                            title="Buat gambar">
-                            <x-icon name="image" :size="16" />
-                            <span class="chat-mode-btn__label">Gambar</span>
-                        </button>
                     </div>
 
-                    <button type="submit" class="chat-send" wire:loading.attr="disabled"
-                        wire:target="send,retry" aria-label="Kirim">
-                        <x-icon name="arrow_upward" :size="18" wire:loading.remove wire:target="send,retry" />
-                        <x-icon name="stop" :size="18" wire:loading wire:target="send,retry" />
-                    </button>
+                    <span class="chat-key-hint">Enter kirim <span>·</span> Shift+Enter baris baru</span>
                 </div>
             </form>
 

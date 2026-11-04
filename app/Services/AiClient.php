@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\SiteSetting;
+use Generator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -28,6 +31,8 @@ class AiClient
     private const TIMEOUT = 120;
 
     private const CONNECT_TIMEOUT = 10;
+
+    private const UNREACHABLE = 'Tidak bisa menghubungi penyedia AI (koneksi gagal atau waktu habis). Periksa base URL lalu coba lagi.';
 
     public static function setApiKey(string $plain): void
     {
@@ -81,8 +86,7 @@ class AiClient
      */
     public function listModels(): array
     {
-        $response = $this->request()->get('/models');
-        $json = $this->decode($response);
+        $json = $this->decode($this->send(fn () => $this->request()->get('/models')));
 
         $models = [];
 
@@ -130,14 +134,9 @@ class AiClient
         }
 
         if ($onDelta === null) {
-            $json = $this->decode($this->request()->post('/chat/completions', $payload));
-            $content = $json['choices'][0]['message']['content'] ?? '';
+            $json = $this->decode($this->send(fn () => $this->request()->post('/chat/completions', $payload)));
 
-            if (is_array($content)) {
-                $content = $this->flattenParts($content);
-            }
-
-            return ['content' => (string) $content, 'truncated' => false];
+            return ['content' => $this->messageContent($json), 'truncated' => false];
         }
 
         return $this->streamChat($payload, $onDelta, $shouldStop);
@@ -155,6 +154,19 @@ class AiClient
      */
     public function generateImage(string $model, string $prompt, ?string $aspectRatio = null): string
     {
+        return $this->generateImageResult($model, $prompt, $aspectRatio)['bytes'];
+    }
+
+    /**
+     * Generate an image and report whether the provider honoured the canvas.
+     *
+     * @return array{bytes: string, requested_ratio: ?string, used_ratio: ?string, fell_back: bool}
+     */
+    public function generateImageResult(string $model, string $prompt, ?string $aspectRatio = null): array
+    {
+        $fellBack = false;
+        $usedRatio = $aspectRatio;
+
         try {
             $bytes = self::imageMode() === 'chat'
                 ? $this->imageViaChat($model, $prompt)
@@ -164,6 +176,8 @@ class AiClient
                 throw $e;
             }
 
+            $fellBack = true;
+            $usedRatio = null;
             $bytes = self::imageMode() === 'chat'
                 ? $this->imageViaChat($model, $prompt)
                 : $this->imageViaImagesEndpoint($model, $prompt, null);
@@ -173,7 +187,18 @@ class AiClient
             throw new AiException('Penyedia tidak mengembalikan gambar.');
         }
 
-        return $bytes;
+        $dimensions = @getimagesizefromstring($bytes);
+
+        if (is_array($dimensions) && $dimensions[0] > 0 && $dimensions[1] > 0) {
+            $usedRatio = $this->simplifyRatio((int) $dimensions[0], (int) $dimensions[1]);
+        }
+
+        return [
+            'bytes' => $bytes,
+            'requested_ratio' => $aspectRatio,
+            'used_ratio' => $usedRatio,
+            'fell_back' => $fellBack || ($aspectRatio !== null && $usedRatio !== $aspectRatio),
+        ];
     }
 
     /**
@@ -185,7 +210,7 @@ class AiClient
      * Returns null when no chat model is available or the rewrite failed; the
      * caller then falls back to the user's own words.
      */
-    public function planImagePrompt(string $request, string $model): ?string
+    public function planImagePrompt(string $request, string $model, ?string $aspectRatio = null): ?string
     {
         $request = trim($request);
 
@@ -193,15 +218,20 @@ class AiClient
             return null;
         }
 
+        $ratioInstruction = $aspectRatio !== null
+            ? "The final canvas MUST be {$aspectRatio}. Compose for that exact orientation and never call it vertical/horizontal incorrectly."
+            : 'Infer orientation only when the user clearly asks for one.';
+
         try {
             $result = $this->chat([
-                ['role' => 'system', 'content' => <<<'TXT'
+                ['role' => 'system', 'content' => <<<TXT
                     You turn a user's request into ONE prompt for an image generator.
                     Describe subject, composition, layout, colours, style and the exact text that
                     must appear, quoting it verbatim in the user's own language.
-                    If the user names an aspect ratio, repeat it.
-                    Never invent phone numbers, addresses, logos or academic years the user did not give;
-                    leave those out instead.
+                    {$ratioInstruction}
+                    Never invent phone numbers, addresses, logos or academic years the user did not give.
+                    Do not add blank placeholder panels, empty QR boxes, or empty contact areas; compose
+                    the available content as a finished visual instead.
                     Reply with the prompt only — no preamble, no explanation, no markdown.
                     TXT],
                 ['role' => 'user', 'content' => $request],
@@ -252,61 +282,122 @@ class AiClient
      */
     private function streamChat(array $payload, callable $onDelta, ?callable $shouldStop): array
     {
-        try {
-            $response = $this->request()
-                ->withOptions(['stream' => true])
-                ->post('/chat/completions', $payload);
-        } catch (ConnectionException $e) {
-            throw new AiException('Tidak bisa menghubungi penyedia AI. Periksa base URL.');
-        }
+        $response = $this->send(fn () => $this->request()
+            // Without read_timeout PHP gives up after default_socket_timeout
+            // (60s), shorter than a reasoning model can stay silent.
+            ->withOptions(['stream' => true, 'read_timeout' => self::TIMEOUT])
+            ->post('/chat/completions', $payload));
 
         if (! $response->successful()) {
             throw $this->failure($response);
         }
 
         $body = $response->toPsrResponse()->getBody();
-        $buffer = '';
         $content = '';
         $truncated = false;
+        $sawEvent = false;
+        $unframed = '';
+
+        try {
+            foreach ($this->lines($body) as $line) {
+                if (str_starts_with($line, 'data:')) {
+                    $sawEvent = true;
+                    $data = trim(substr($line, 5));
+
+                    if ($data === '[DONE]') {
+                        break;
+                    }
+
+                    $json = json_decode($data, true);
+
+                    if (is_array($json)) {
+                        $error = $this->errorDetail($json);
+
+                        if ($error !== null) {
+                            if ($content === '') {
+                                throw new AiException('Penyedia AI mengirim error: '.$error);
+                            }
+
+                            $truncated = true;
+                            break;
+                        }
+
+                        $delta = $json['choices'][0]['delta']['content'] ?? null;
+
+                        if (is_string($delta) && $delta !== '') {
+                            $content .= $delta;
+                            $onDelta($delta);
+                        }
+                    }
+                } elseif (! $sawEvent && ! str_starts_with($line, ':')) {
+                    $unframed .= $line;
+                }
+
+                // Checked on every line, keep-alives included, so a stop works
+                // while a model is still thinking and has sent no text.
+                if ($shouldStop !== null && $shouldStop()) {
+                    $truncated = true;
+                    break;
+                }
+            }
+        } catch (AiException $e) {
+            throw $e;
+        } catch (RuntimeException) {
+            // A dropped connection or a read timeout: keep what already arrived.
+            if ($content === '') {
+                throw new AiException(self::UNREACHABLE);
+            }
+
+            return ['content' => $content, 'truncated' => true];
+        }
+
+        // Some gateways ignore stream:true and answer with one plain JSON body.
+        if (! $sawEvent && ! $truncated && $unframed !== '') {
+            $json = json_decode($unframed, true);
+
+            if (! is_array($json)) {
+                throw new AiException('Penyedia mengembalikan respons yang tidak dikenali. Periksa base URL.');
+            }
+
+            $error = $this->errorDetail($json);
+
+            if ($error !== null) {
+                throw new AiException('Penyedia AI mengirim error: '.$error);
+            }
+
+            $content = $this->messageContent($json);
+
+            if ($content !== '') {
+                $onDelta($content);
+            }
+        }
+
+        return ['content' => $content, 'truncated' => $truncated];
+    }
+
+    /**
+     * Trimmed lines of a response body as they arrive, including a last line
+     * that has no trailing newline.
+     *
+     * @return Generator<int, string>
+     */
+    private function lines(StreamInterface $body): Generator
+    {
+        $buffer = '';
 
         while (! $body->eof()) {
             $buffer .= $body->read(1024);
 
             while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = trim(substr($buffer, 0, $pos));
+                yield trim(substr($buffer, 0, $pos));
+
                 $buffer = substr($buffer, $pos + 1);
-
-                if ($line === '' || ! str_starts_with($line, 'data:')) {
-                    continue;
-                }
-
-                $data = trim(substr($line, 5));
-
-                if ($data === '[DONE]') {
-                    break 2;
-                }
-
-                $json = json_decode($data, true);
-
-                if (! is_array($json)) {
-                    continue;
-                }
-
-                $delta = $json['choices'][0]['delta']['content'] ?? null;
-
-                if (is_string($delta) && $delta !== '') {
-                    $content .= $delta;
-                    $onDelta($delta);
-                }
-
-                if ($shouldStop !== null && $shouldStop()) {
-                    $truncated = true;
-                    break 2;
-                }
             }
         }
 
-        return ['content' => $content, 'truncated' => $truncated];
+        if (trim($buffer) !== '') {
+            yield trim($buffer);
+        }
     }
 
     private function imageViaImagesEndpoint(string $model, string $prompt, ?string $aspectRatio = null): string
@@ -315,6 +406,8 @@ class AiClient
             'model' => $model,
             'prompt' => $prompt,
             'n' => 1,
+            'quality' => 'auto',
+            'output_format' => 'png',
         ];
 
         // Some gateways only accept 1:1 and answer 400 to any canvas control.
@@ -322,7 +415,9 @@ class AiClient
             $payload['aspect_ratio'] = $aspectRatio;
         }
 
-        $json = $this->decode($this->request()->post('/images/generations', $payload));
+        $json = $this->decode($this->send(fn () => $this->request()
+            ->withHeader('Idempotency-Key', (string) Str::uuid())
+            ->post('/images/generations', $payload)));
 
         $row = $json['data'][0] ?? null;
 
@@ -343,11 +438,11 @@ class AiClient
 
     private function imageViaChat(string $model, string $prompt): string
     {
-        $json = $this->decode($this->request()->post('/chat/completions', [
+        $json = $this->decode($this->send(fn () => $this->request()->post('/chat/completions', [
             'model' => $model,
             'messages' => [['role' => 'user', 'content' => $prompt]],
             'modalities' => ['image', 'text'],
-        ]));
+        ])));
 
         $images = $json['choices'][0]['message']['images'] ?? null;
 
@@ -373,7 +468,7 @@ class AiClient
             return $comma === false ? '' : $this->decodeBase64(substr($url, $comma + 1));
         }
 
-        $response = Http::timeout(self::TIMEOUT)->get($url);
+        $response = $this->send(fn () => Http::timeout(self::TIMEOUT)->get($url));
 
         if (! $response->successful()) {
             throw new AiException('Gagal mengunduh gambar dari penyedia ('.$response->status().').');
@@ -390,6 +485,29 @@ class AiClient
     }
 
     /**
+     * @param  array<string, mixed>  $json
+     */
+    private function messageContent(array $json): string
+    {
+        $content = $json['choices'][0]['message']['content'] ?? '';
+
+        return is_array($content) ? $this->flattenParts($content) : (string) $content;
+    }
+
+    /**
+     * The provider's own error text, in either of the shapes gateways use.
+     *
+     * @param  array<string, mixed>  $json
+     */
+    private function errorDetail(array $json): ?string
+    {
+        $error = $json['error'] ?? null;
+        $detail = is_array($error) ? ($error['message'] ?? null) : $error;
+
+        return is_string($detail) && $detail !== '' ? $detail : null;
+    }
+
+    /**
      * @param  array<int, mixed>  $parts
      */
     private function flattenParts(array $parts): string
@@ -403,6 +521,33 @@ class AiClient
         }
 
         return $text;
+    }
+
+    private function simplifyRatio(int $width, int $height): string
+    {
+        $a = $width;
+        $b = $height;
+
+        while ($b !== 0) {
+            [$a, $b] = [$b, $a % $b];
+        }
+
+        return (int) ($width / $a).':'.(int) ($height / $a);
+    }
+
+    /**
+     * Timeouts and refused connections are thrown, not returned as a response,
+     * so they have to become an AiException here for callers to show them.
+     *
+     * @param  callable(): Response  $call
+     */
+    private function send(callable $call): Response
+    {
+        try {
+            return $call();
+        } catch (ConnectionException) {
+            throw new AiException(self::UNREACHABLE);
+        }
     }
 
     private function request(): PendingRequest
@@ -447,7 +592,7 @@ class AiClient
     {
         $status = $response->status();
         $json = json_decode($response->body(), true);
-        $detail = is_array($json) ? ($json['error']['message'] ?? $json['message'] ?? null) : null;
+        $detail = is_array($json) ? ($this->errorDetail($json) ?? $json['message'] ?? null) : null;
 
         $message = 'Penyedia AI menolak permintaan (HTTP '.$status.').';
 

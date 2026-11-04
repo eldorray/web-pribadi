@@ -12,8 +12,10 @@ use App\Models\ChatUser;
 use App\Models\SiteSetting;
 use App\Services\AiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -98,6 +100,7 @@ class ChatPageTest extends TestCase
         $this->loggedInGet('/chat')
             ->assertOk()
             ->assertSee('noindex', false)
+            ->assertSee('data-chat-pending', false)
             ->assertDontSee('sk-TEST');
     }
 
@@ -257,6 +260,36 @@ class ChatPageTest extends TestCase
     }
 
     #[Test]
+    public function image_mode_exposes_explicit_size_choices(): void
+    {
+        $this->chatPage()
+            ->call('setMode', 'image')
+            ->assertSet('imageMode', true)
+            ->assertSet('imageSize', 'auto')
+            ->assertSee('Ukuran kanvas')
+            ->assertSee('Persegi')
+            ->assertSee('Potret')
+            ->assertSee('Lanskap')
+            ->assertSee('Story')
+            ->call('setImageSize', '4:5')
+            ->assertSet('imageSize', '4:5')
+            ->call('setMode', 'image')
+            ->assertSet('imageSize', '4:5')
+            ->call('setImageSize', 'garbage')
+            ->assertSet('imageSize', '4:5');
+    }
+
+    #[Test]
+    public function starter_prompt_switches_mode_and_fills_composer(): void
+    {
+        $this->chatPage()
+            ->call('useStarter', 'Buat flyer PPDB', 'image')
+            ->assertSet('imageMode', true)
+            ->assertSet('prompt', 'Buat flyer PPDB')
+            ->assertDispatched('chat-focus-composer');
+    }
+
+    #[Test]
     public function image_mode_saves_generated_file(): void
     {
         Http::fake([
@@ -303,13 +336,17 @@ class ChatPageTest extends TestCase
         $this->chatPage()
             ->set('imageMode', true)
             ->set('modelId', 'img-model')
-            ->set('prompt', 'buatkan flyer ppdb dengan rasio 16:9')
+            ->set('imageSize', '16:9')
+            ->set('prompt', 'buatkan flyer ppdb')
             ->call('send')
             ->assertHasNoErrors();
 
         $message = ChatMessage::where('role', 'assistant')->first();
 
         $this->assertSame($planned, $message->content);
+        $this->assertSame('16:9', $message->image_requested_ratio);
+        $this->assertSame('16:9', $message->image_used_ratio);
+        $this->assertFalse($message->image_fell_back);
 
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/generations')
             && $request['prompt'] === $planned
@@ -332,14 +369,18 @@ class ChatPageTest extends TestCase
         $this->chatPage()
             ->set('imageMode', true)
             ->set('modelId', 'img-model')
-            ->set('prompt', 'poster ppdb 16:9')
+            ->set('imageSize', '16:9')
+            ->set('prompt', 'poster ppdb')
             ->call('send')
             ->assertHasNoErrors();
 
         $message = ChatMessage::where('role', 'assistant')->first();
 
         $this->assertSame('SQUARE-IMAGE', Storage::disk('local')->get($message->image_path));
-        Http::assertSentCount(3); // planner, rejected 16:9 attempt, square retry
+        $this->assertSame('16:9', $message->image_requested_ratio);
+        $this->assertNull($message->image_used_ratio);
+        $this->assertTrue($message->image_fell_back);
+        Http::assertSentCount(3); // planner, rejected 16:9 attempt, provider-default retry
     }
 
     #[Test]
@@ -491,5 +532,308 @@ class ChatPageTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('PNGDATA', $response->streamedContent());
+    }
+
+    /** All JSON bodies the fake provider received at /chat/completions. */
+    private function chatBodies(): array
+    {
+        return Http::recorded(fn (Request $request) => str_ends_with($request->url(), '/chat/completions'))
+            ->map(fn (array $pair) => $pair[0]->data())
+            ->values()
+            ->all();
+    }
+
+    #[Test]
+    public function image_mode_uses_the_newest_request_not_the_first(): void
+    {
+        Http::fake([
+            'ai.test/v1/chat/completions' => function (Request $request) {
+                return ($request->data()['stream'] ?? false)
+                    ? Http::response($this->sse('Halo'))
+                    : Http::response(['choices' => [['message' => ['content' => 'prompt terencana']]]]);
+            },
+            'ai.test/v1/images/generations' => Http::response(['data' => [['b64_json' => base64_encode('PNG')]]]),
+        ]);
+
+        $this->chatPage()
+            ->set('prompt', 'hello bisa bantu saya')
+            ->call('send')
+            ->call('setMode', 'image')
+            ->set('prompt', 'gambar kucing oranye')
+            ->call('send');
+
+        $bodies = $this->chatBodies();
+        $planner = end($bodies);
+
+        $this->assertSame('gambar kucing oranye', $planner['messages'][1]['content']);
+    }
+
+    #[Test]
+    public function streamed_chunks_are_escaped_before_reaching_the_browser(): void
+    {
+        SiteSetting::set('ai_streaming', '1', 'text', 'ai');
+        $this->fakeChat('Awal <img src=x onerror=alert(1)> a<b');
+
+        $streamed = '';
+        ob_start(function (string $buffer) use (&$streamed): string {
+            $streamed .= $buffer;
+
+            return '';
+        });
+
+        try {
+            $this->chatPage()->set('prompt', 'Halo')->call('send');
+        } finally {
+            ob_end_clean();
+        }
+
+        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt; a&lt;b', $streamed);
+        $this->assertStringNotContainsString('<img src=x', $streamed);
+    }
+
+    #[Test]
+    public function image_mode_connection_failure_becomes_an_error_message(): void
+    {
+        Http::fake(fn () => throw new ConnectionException('cURL error 28: timed out'));
+
+        $this->chatPage()
+            ->call('setMode', 'image')
+            ->set('prompt', 'gambar kucing')
+            ->call('send');
+
+        $error = ChatMessage::where('is_error', true)->first();
+
+        $this->assertNotNull($error);
+        $this->assertStringContainsString('Tidak bisa menghubungi', $error->content);
+    }
+
+    #[Test]
+    public function planner_connection_failure_falls_back_to_the_users_words(): void
+    {
+        Http::fake([
+            'ai.test/v1/chat/completions' => fn () => throw new ConnectionException('timed out'),
+            'ai.test/v1/images/generations' => Http::response(['data' => [['b64_json' => base64_encode('PNG')]]]),
+        ]);
+
+        $this->chatPage()
+            ->call('setMode', 'image')
+            ->set('prompt', 'gambar kucing')
+            ->call('send');
+
+        $generated = ChatMessage::whereNotNull('image_path')->first();
+
+        $this->assertNotNull($generated);
+        $this->assertSame('gambar kucing', $generated->content);
+    }
+
+    #[Test]
+    public function documents_can_be_attached_on_a_model_without_vision(): void
+    {
+        $html = $this->chatPage()->set('modelId', 'chat-effort')->html();
+
+        preg_match('/<input[^>]*type="file"[^>]*>/s', $html, $input);
+
+        $this->assertNotEmpty($input);
+        $this->assertStringNotContainsString('disabled', $input[0]);
+        $this->assertStringContainsString('accept=".pdf,.docx"', $input[0]);
+    }
+
+    #[Test]
+    public function vision_models_also_accept_images(): void
+    {
+        $html = $this->chatPage()->set('modelId', 'chat-basic')->html();
+
+        preg_match('/<input[^>]*type="file"[^>]*>/s', $html, $input);
+
+        $this->assertStringContainsString('accept=".jpg,.jpeg,.png,.webp,.pdf,.docx"', $input[0]);
+    }
+
+    #[Test]
+    public function a_large_photo_does_not_push_earlier_turns_out_of_the_prompt(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Foto']);
+        Storage::disk('local')->put('chat/foto.jpg', str_repeat('x', 200 * 1024));
+
+        $conversation->messages()->create(['role' => 'user', 'content' => 'nama saya Budi']);
+        $conversation->messages()->create(['role' => 'assistant', 'content' => 'halo Budi']);
+        $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'lihat foto ini',
+            'attachments' => [['path' => 'chat/foto.jpg', 'name' => 'foto.jpg', 'mime' => 'image/jpeg', 'text' => null]],
+        ]);
+        $error = $conversation->messages()->create(['role' => 'assistant', 'content' => 'gagal', 'is_error' => true]);
+
+        $this->fakeChat();
+
+        $this->chatPage()->set('conversationId', $conversation->id)->call('retry', $error->id);
+
+        $this->assertCount(3, $this->chatBodies()[0]['messages']);
+    }
+
+    #[Test]
+    public function a_long_document_survives_a_follow_up_question(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Buku']);
+        $conversation->messages()->create([
+            'role' => 'user',
+            'content' => 'ringkas',
+            'attachments' => [['path' => 'x', 'name' => 'buku.pdf', 'mime' => 'application/pdf', 'text' => str_repeat('a', 120000)]],
+        ]);
+        $conversation->messages()->create(['role' => 'assistant', 'content' => 'ringkasan']);
+
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('conversationId', $conversation->id)
+            ->set('prompt', 'bab 2 tentang apa?')
+            ->call('send');
+
+        $messages = $this->chatBodies()[0]['messages'];
+
+        $this->assertCount(3, $messages);
+        $this->assertStringContainsString('buku.pdf', $messages[0]['content']);
+    }
+
+    #[Test]
+    public function trimmed_history_never_opens_with_an_assistant_turn(): void
+    {
+        $conversation = $this->user->conversations()->create(['title' => 'Panjang']);
+        $conversation->messages()->create(['role' => 'user', 'content' => str_repeat('a', 500000)]);
+        $conversation->messages()->create(['role' => 'assistant', 'content' => 'oke']);
+
+        $this->fakeChat();
+
+        $this->chatPage()
+            ->set('conversationId', $conversation->id)
+            ->set('prompt', 'lanjut')
+            ->call('send');
+
+        $messages = $this->chatBodies()[0]['messages'];
+
+        $this->assertCount(1, $messages);
+        $this->assertSame('lanjut', $messages[0]['content']);
+    }
+
+    #[Test]
+    public function stop_route_requires_the_pin(): void
+    {
+        $this->post('/chat/stop')->assertRedirect(route('chat.pin'));
+    }
+
+    #[Test]
+    public function stop_route_flags_the_signed_in_user(): void
+    {
+        $login = $this->post('/chat/pin', ['pin' => '123456']);
+
+        $this->withUnencryptedCookie('chat_session', $login->getCookie('chat_session', false)->getValue())
+            ->post('/chat/stop')
+            ->assertNoContent();
+
+        $this->assertTrue(Cache::has($this->user->stopCacheKey()));
+    }
+
+    #[Test]
+    public function stop_keeps_the_partial_answer_in_the_same_conversation(): void
+    {
+        $key = $this->user->stopCacheKey();
+
+        Http::fake([
+            'ai.test/v1/chat/completions' => function () use ($key) {
+                Cache::put($key, true, 60);
+
+                return Http::response(
+                    'data: '.json_encode(['choices' => [['delta' => ['content' => 'Sebagian']]]])."\n\n"
+                    .'data: '.json_encode(['choices' => [['delta' => ['content' => ' lagi']]]])."\n\n"
+                );
+            },
+        ]);
+
+        $page = $this->chatPage()->set('prompt', 'Halo')->call('send');
+
+        $answer = ChatMessage::where('role', 'assistant')->firstOrFail();
+
+        $this->assertSame('Sebagian', $answer->content);
+        $this->assertTrue($answer->is_truncated);
+        $page->assertSet('conversationId', $answer->chat_conversation_id);
+        $this->assertFalse(Cache::has($key));
+    }
+
+    #[Test]
+    public function a_leftover_stop_flag_does_not_cut_the_next_answer(): void
+    {
+        Cache::put($this->user->stopCacheKey(), true, 60);
+        $this->fakeChat('Utuh');
+
+        $this->chatPage()->set('prompt', 'Halo')->call('send');
+
+        $answer = ChatMessage::where('role', 'assistant')->firstOrFail();
+
+        $this->assertSame('Utuh', $answer->content);
+        $this->assertFalse($answer->is_truncated);
+    }
+
+    #[Test]
+    public function image_mode_has_no_stop_button_because_it_cannot_be_interrupted(): void
+    {
+        $this->assertStringContainsString('data-chat-stop', $this->chatPage()->html());
+        $this->assertStringNotContainsString('data-chat-stop', $this->chatPage()->call('setMode', 'image')->html());
+    }
+
+    #[Test]
+    public function attachment_type_is_read_from_the_stored_file(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+
+        $this->fakeChat();
+
+        // Named .jpg but holding PNG bytes: only reading the stored file can say image/png.
+        $this->chatPage()
+            ->set('prompt', 'Ini apa?')
+            ->set('uploads', [UploadedFile::fake()->createWithContent('foto.jpg', $png)])
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $message = ChatMessage::where('role', 'user')->firstOrFail();
+
+        $this->assertSame('image/png', $message->attachments[0]['mime']);
+    }
+
+    #[Test]
+    public function thinking_indicator_keeps_its_flex_layout_while_loading(): void
+    {
+        $html = $this->chatPage()->html();
+
+        // Without .flex, Livewire forces display:inline-block and the indicator
+        // falls out of the centred message column.
+        $this->assertStringContainsString('wire:loading.flex.delay.short', $html);
+        $this->assertStringContainsString('Sedang berpikir…', $html);
+    }
+
+    #[Test]
+    public function image_mode_says_it_is_making_an_image(): void
+    {
+        $html = $this->chatPage()->call('setMode', 'image')->html();
+
+        $this->assertStringContainsString('Sedang membuat gambar…', $html);
+        $this->assertStringNotContainsString('Sedang berpikir…', $html);
+    }
+
+    #[Test]
+    public function sidebar_can_be_collapsed_and_reopened(): void
+    {
+        $html = $this->chatPage()->html();
+
+        $this->assertStringContainsString('aria-label="Sembunyikan sidebar"', $html);
+        $this->assertStringContainsString('aria-label="Tampilkan sidebar"', $html);
+    }
+
+    #[Test]
+    public function html_classes_are_restored_when_livewire_swaps_the_page(): void
+    {
+        // wire:navigate resets the classes on <html>, dark mode included.
+        $this->loggedInGet('/chat')
+            ->assertOk()
+            ->assertSee("addEventListener('livewire:navigating'", false)
+            ->assertSee('onSwap', false);
     }
 }

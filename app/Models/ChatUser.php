@@ -34,4 +34,10 @@ class ChatUser extends Model
     {
         return substr(hash('sha256', (string) $this->pin), 0, 16);
     }
+
+    /** Cache flag the stop button raises and the running answer watches. */
+    public function stopCacheKey(): string
+    {
+        return 'chat-stop:'.$this->getKey();
+    }
 }

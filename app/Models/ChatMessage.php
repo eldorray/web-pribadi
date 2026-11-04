@@ -17,6 +17,9 @@ class ChatMessage extends Model
         'model',
         'effort',
         'image_path',
+        'image_requested_ratio',
+        'image_used_ratio',
+        'image_fell_back',
         'attachments',
         'is_error',
         'is_truncated',
@@ -26,6 +29,7 @@ class ChatMessage extends Model
     {
         return [
             'attachments' => 'array',
+            'image_fell_back' => 'boolean',
             'is_error' => 'boolean',
             'is_truncated' => 'boolean',
         ];

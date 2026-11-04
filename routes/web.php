@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatAuthController;
 use App\Http\Controllers\ChatFileController;
+use App\Http\Controllers\ChatStopController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Middleware\ChatPin;
 use App\Http\Middleware\TrackVisitor;
@@ -29,6 +30,7 @@ Route::prefix('chat')->group(function () {
     Route::post('/logout', [ChatAuthController::class, 'logout'])->name('chat.logout');
 
     Route::middleware(ChatPin::class)->group(function () {
+        Route::post('/stop', ChatStopController::class)->name('chat.stop');
         Route::get('/file/{message}/{index}', ChatFileController::class)->name('chat.file');
         Route::get('/{conversation?}', Page::class)->name('chat')->whereNumber('conversation');
     });
