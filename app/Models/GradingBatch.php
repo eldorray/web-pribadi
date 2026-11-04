@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 /**
  * One grading session. It keeps a copy of the rubric, so editing or deleting
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class GradingBatch extends Model
 {
+    public const MAX_ITEMS = 100;
+
     /** A browser that vanished mid-request leaves its item stuck this long. */
     private const STALE_MINUTES = 5;
 
@@ -45,6 +48,21 @@ class GradingBatch extends Model
     public function maxScore(): float
     {
         return (float) array_sum(array_column($this->criteria(), 'max_score'));
+    }
+
+    /** Two files with the same name are two submissions, so neither may vanish. */
+    public function uniqueStudentName(string $base): string
+    {
+        $base = Str::limit(trim($base) ?: 'Tanpa nama', 200, '');
+        $name = $base;
+        $copy = 1;
+
+        while ($this->items()->where('student_name', $name)->exists()) {
+            $copy++;
+            $name = "{$base} ({$copy})";
+        }
+
+        return $name;
     }
 
     public function releaseStaleItems(): int

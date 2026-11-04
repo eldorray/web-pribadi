@@ -14,7 +14,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -23,16 +22,14 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class GradingUploadController extends Controller
 {
-    public const MAX_ITEMS = 100;
-
     public function store(Request $request, int $batch): JsonResponse
     {
         /** @var ChatUser $chatUser */
         $chatUser = app('chatUser');
         $batch = $chatUser->gradingBatches()->findOrFail($batch);
 
-        if ($batch->items()->count() >= self::MAX_ITEMS) {
-            return $this->rejected('Satu sesi maksimal '.self::MAX_ITEMS.' tugas.');
+        if ($batch->items()->count() >= GradingBatch::MAX_ITEMS) {
+            return $this->rejected('Satu sesi maksimal '.GradingBatch::MAX_ITEMS.' tugas.');
         }
 
         $validator = Validator::make($request->all(), [
@@ -63,7 +60,7 @@ class GradingUploadController extends Controller
         $unreadable = ! $isImage && $text === null;
 
         $item = $batch->items()->create([
-            'student_name' => $this->uniqueStudentName($batch, pathinfo($name, PATHINFO_FILENAME)),
+            'student_name' => $batch->uniqueStudentName(pathinfo($name, PATHINFO_FILENAME)),
             'type' => $isImage ? 'image' : 'document',
             'original_name' => $name,
             'status' => $unreadable ? GradingItem::FAILED : GradingItem::QUEUED,
@@ -87,20 +84,6 @@ class GradingUploadController extends Controller
             'Cache-Control' => 'private, max-age=3600',
             'X-Content-Type-Options' => 'nosniff',
         ]);
-    }
-
-    private function uniqueStudentName(GradingBatch $batch, string $base): string
-    {
-        $base = Str::limit(trim($base) ?: 'Tanpa nama', 200, '');
-        $name = $base;
-        $copy = 1;
-
-        while ($batch->items()->where('student_name', $name)->exists()) {
-            $copy++;
-            $name = "{$base} ({$copy})";
-        }
-
-        return $name;
     }
 
     private function ownedItem(int $id): GradingItem

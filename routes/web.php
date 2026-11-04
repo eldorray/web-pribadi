@@ -7,6 +7,7 @@ use App\Http\Controllers\ChatStopController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\GradingProcessController;
 use App\Http\Controllers\GradingUploadController;
+use App\Http\Controllers\GradingVideoController;
 use App\Http\Middleware\ChatPin;
 use App\Http\Middleware\TrackVisitor;
 use App\Livewire\Admin\Dashboard;
@@ -38,6 +39,10 @@ Route::prefix('chat')->group(function () {
         Route::get('/penilaian', GradingIndex::class)->name('chat.grading');
         Route::get('/penilaian/{batch}', BatchPage::class)->name('chat.grading.batch')->whereNumber('batch');
         Route::post('/penilaian/{batch}/items', [GradingUploadController::class, 'store'])->name('chat.grading.items.store')->whereNumber('batch');
+        Route::post('/penilaian/{batch}/videos', [GradingVideoController::class, 'store'])->name('chat.grading.videos.store')->whereNumber('batch');
+        Route::post('/penilaian/items/{item}/frames', [GradingVideoController::class, 'frames'])->name('chat.grading.videos.frames')->whereNumber('item');
+        Route::post('/penilaian/items/{item}/audio', [GradingVideoController::class, 'audio'])->name('chat.grading.videos.audio')->whereNumber('item');
+        Route::post('/penilaian/items/{item}/ready', [GradingVideoController::class, 'ready'])->name('chat.grading.videos.ready')->whereNumber('item');
         Route::post('/penilaian/items/{item}/grade', [GradingProcessController::class, 'grade'])->name('chat.grading.items.grade')->whereNumber('item');
         Route::get('/penilaian/items/{item}/file/{index}', [GradingUploadController::class, 'file'])->name('chat.grading.file')->whereNumber(['item', 'index']);
         Route::get('/file/{message}/{index}', ChatFileController::class)->name('chat.file');

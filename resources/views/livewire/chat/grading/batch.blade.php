@@ -11,16 +11,18 @@
     </header>
 
     <section class="chat-grading__panel" data-grading-queue data-upload-limit="{{ $uploadLimit }}"
-        data-store-url="{{ route('chat.grading.items.store', $batch) }}" wire:ignore>
+        data-store-url="{{ route('chat.grading.items.store', $batch) }}"
+        data-video-url="{{ route('chat.grading.videos.store', $batch) }}" wire:ignore>
         <label class="chat-grading__secondary chat-grading__picker">
             <x-icon name="attach_file" :size="16" />
             Pilih tugas
             <input type="file" class="sr-only" multiple data-grading-files
-                accept=".jpg,.jpeg,.png,.webp,.pdf,.docx" />
+                accept=".jpg,.jpeg,.png,.webp,.pdf,.docx,.mp4,.mov,.webm,.m4v,.mkv" />
         </label>
         <p class="chat-grading__meta">
             Satu file untuk satu mahasiswa. Nama mahasiswa diambil dari nama file.
             Gambar dan dokumen maksimal {{ round($uploadLimit / 1048576, 1) }} MB per file.
+            Video maksimal 20 menit, diolah di browser ini dan tidak disimpan di server, jadi biarkan halaman tetap terbuka.
         </p>
         <p class="chat-grading__status" data-grading-progress role="status"></p>
         <ul class="chat-grading__messages" data-grading-messages></ul>

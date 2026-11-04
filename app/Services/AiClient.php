@@ -155,7 +155,7 @@ class AiClient
     public function transcribe(string $path, string $model, int $offsetSeconds = 0): string
     {
         $response = $this->send(fn () => $this->connection()
-            ->attach('file', (string) file_get_contents($path), basename($path).'.wav')
+            ->attach('file', fopen($path, 'r'), basename($path).'.wav')
             ->post('/audio/transcriptions', ['model' => $model, 'response_format' => 'verbose_json']));
 
         $json = $this->decode($response);
