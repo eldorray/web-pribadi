@@ -32,6 +32,9 @@ class AiClient
 
     private const CONNECT_TIMEOUT = 10;
 
+    /** Provider word timings are grouped into lines of this many seconds. */
+    private const TRANSCRIPT_LINE_SECONDS = 30;
+
     private const UNREACHABLE = 'Tidak bisa menghubungi penyedia AI (koneksi gagal atau waktu habis). Periksa base URL lalu coba lagi.';
 
     public static function setApiKey(string $plain): void
@@ -140,6 +143,42 @@ class AiClient
         }
 
         return $this->streamChat($payload, $onDelta, $shouldStop);
+    }
+
+    /**
+     * Transcribe one audio file into lines marked `[mm:ss]`, so a grade can
+     * point at a moment in the video. $offsetSeconds is where this chunk starts.
+     *
+     * Providers disagree on timings: some send `segments`, some `words`, some
+     * none, in which case the only known time is the start of the chunk.
+     */
+    public function transcribe(string $path, string $model, int $offsetSeconds = 0): string
+    {
+        $response = $this->send(fn () => $this->connection()
+            ->attach('file', (string) file_get_contents($path), basename($path).'.wav')
+            ->post('/audio/transcriptions', ['model' => $model, 'response_format' => 'verbose_json']));
+
+        $json = $this->decode($response);
+
+        $lines = [];
+
+        foreach ((array) ($json['segments'] ?? []) as $segment) {
+            if (is_array($segment) && isset($segment['start'], $segment['text'])) {
+                $lines[] = $this->timestamp((float) $segment['start'] + $offsetSeconds).' '.trim((string) $segment['text']);
+            }
+        }
+
+        if ($lines === []) {
+            $lines = $this->linesFromWords((array) ($json['words'] ?? []), $offsetSeconds);
+        }
+
+        if ($lines !== []) {
+            return implode("\n", $lines);
+        }
+
+        $text = trim((string) ($json['text'] ?? ''));
+
+        return $text === '' ? '' : $this->timestamp($offsetSeconds).' '.$text;
     }
 
     /**
@@ -400,6 +439,50 @@ class AiClient
         }
     }
 
+    /**
+     * @param  array<int, mixed>  $words
+     * @return list<string>
+     */
+    private function linesFromWords(array $words, int $offsetSeconds): array
+    {
+        $lines = [];
+        $line = [];
+        $lineStart = null;
+
+        foreach ($words as $word) {
+            if (! is_array($word) || ! isset($word['start'])) {
+                continue;
+            }
+
+            $start = (float) $word['start'];
+            $text = trim((string) ($word['word'] ?? $word['text'] ?? ''));
+
+            if ($lineStart === null || $start - $lineStart >= self::TRANSCRIPT_LINE_SECONDS) {
+                if ($line !== []) {
+                    $lines[] = $this->timestamp($lineStart + $offsetSeconds).' '.implode(' ', $line);
+                }
+
+                $line = [];
+                $lineStart = $start;
+            }
+
+            $line[] = $text;
+        }
+
+        if ($line !== []) {
+            $lines[] = $this->timestamp($lineStart + $offsetSeconds).' '.implode(' ', $line);
+        }
+
+        return $lines;
+    }
+
+    private function timestamp(float $seconds): string
+    {
+        $whole = (int) $seconds;
+
+        return sprintf('[%02d:%02d]', intdiv($whole, 60), $whole % 60);
+    }
+
     private function imageViaImagesEndpoint(string $model, string $prompt, ?string $aspectRatio = null): string
     {
         $payload = [
@@ -552,6 +635,12 @@ class AiClient
 
     private function request(): PendingRequest
     {
+        return $this->connection()->asJson();
+    }
+
+    /** Without a body format: a JSON Content-Type would break multipart uploads. */
+    private function connection(): PendingRequest
+    {
         $key = self::apiKey();
 
         if ($key === null || trim($key) === '') {
@@ -561,7 +650,6 @@ class AiClient
         return Http::baseUrl(self::baseUrl())
             ->withToken(trim($key))
             ->acceptJson()
-            ->asJson()
             ->timeout(self::TIMEOUT)
             ->connectTimeout(self::CONNECT_TIMEOUT);
     }
@@ -604,6 +692,6 @@ class AiClient
             $message .= ' Periksa base URL dan nama model.';
         }
 
-        return new AiException($message);
+        return new AiException($message, $status);
     }
 }

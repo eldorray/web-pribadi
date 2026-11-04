@@ -398,6 +398,93 @@ class AiClientTest extends TestCase
         (new AiClient)->chat([['role' => 'user', 'content' => 'x']], 'm', null, fn () => null);
     }
 
+    private function audioFile(): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'wav');
+        file_put_contents($path, 'RIFF');
+
+        return $path;
+    }
+
+    #[Test]
+    public function transcribe_formats_segments_with_offset(): void
+    {
+        Http::fake(['ai.test/*' => Http::response(['text' => 'halo', 'segments' => [['start' => 15.2, 'text' => ' halo ']]])]);
+
+        $text = (new AiClient)->transcribe($this->audioFile(), 'voice', 300);
+
+        $this->assertSame('[05:15] halo', $text);
+    }
+
+    #[Test]
+    public function transcribe_groups_word_timings_every_thirty_seconds(): void
+    {
+        Http::fake(['ai.test/*' => Http::response(['text' => 'a b c', 'words' => [
+            ['start' => 1.0, 'word' => 'a'],
+            ['start' => 29.0, 'word' => 'b'],
+            ['start' => 31.0, 'word' => 'c'],
+        ]])]);
+
+        $text = (new AiClient)->transcribe($this->audioFile(), 'voice', 60);
+
+        $this->assertSame("[01:01] a b\n[01:31] c", $text);
+    }
+
+    #[Test]
+    public function transcribe_without_timings_marks_the_chunk_start(): void
+    {
+        Http::fake(['ai.test/*' => Http::response(['text' => 'halo', 'turns' => []])]);
+
+        $this->assertSame('[05:00] halo', (new AiClient)->transcribe($this->audioFile(), 'voice', 300));
+    }
+
+    #[Test]
+    public function transcribe_of_silence_returns_an_empty_string(): void
+    {
+        Http::fake(['ai.test/*' => Http::response(['text' => '   '])]);
+
+        $this->assertSame('', (new AiClient)->transcribe($this->audioFile(), 'voice'));
+    }
+
+    #[Test]
+    public function transcribe_sends_file_and_model_as_multipart(): void
+    {
+        Http::fake(['ai.test/*' => Http::response(['text' => 'halo'])]);
+
+        (new AiClient)->transcribe($this->audioFile(), 'voice');
+
+        Http::assertSent(fn (Request $request) => $request->isMultipart()
+            && str_ends_with($request->url(), '/audio/transcriptions')
+            && collect($request->data())->contains(fn ($part) => $part['name'] === 'model' && $part['contents'] === 'voice')
+            && collect($request->data())->contains(fn ($part) => $part['name'] === 'response_format' && $part['contents'] === 'verbose_json')
+            && collect($request->data())->contains(fn ($part) => $part['name'] === 'file'));
+    }
+
+    #[Test]
+    public function transcribe_missing_endpoint_is_readable(): void
+    {
+        Http::fake(['ai.test/*' => Http::response('<html>nope</html>', 404)]);
+
+        try {
+            (new AiClient)->transcribe($this->audioFile(), 'voice');
+            $this->fail('should have thrown');
+        } catch (AiException $e) {
+            $this->assertSame(404, $e->getCode());
+            $this->assertStringContainsString('404', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function transcribe_connection_failure_is_readable(): void
+    {
+        Http::fake(fn () => throw new ConnectionException('refused'));
+
+        $this->expectException(AiException::class);
+        $this->expectExceptionMessageMatches('/Tidak bisa menghubungi/');
+
+        (new AiClient)->transcribe($this->audioFile(), 'voice');
+    }
+
     /** A body that hands out $first, then fails the way a dropped socket does. */
     private function fakeStreamBody(string $first): void
     {
