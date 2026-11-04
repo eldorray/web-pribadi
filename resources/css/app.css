@@ -3229,3 +3229,14 @@ a, button { -webkit-tap-highlight-color: transparent; }
     .chat-grading__columns { grid-template-columns: minmax(0, 1fr); }
     .chat-grading { padding-inline: 0.875rem; }
 }
+
+.chat-grading__picker { align-self: flex-start; }
+
+.chat-grading__messages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+    font-size: 0.8125rem;
+    color: var(--color-error);
+}

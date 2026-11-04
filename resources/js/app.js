@@ -1,4 +1,5 @@
 import './chat';
+import './grading';
 
 /**
  * Trigger blur-reveal on elements that scroll into view.

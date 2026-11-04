@@ -6,6 +6,7 @@ namespace App\Livewire\Chat\Grading;
 
 use App\Models\ChatUser;
 use App\Models\GradingBatch;
+use App\Support\UploadLimits;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -26,6 +27,7 @@ class BatchPage extends Component
     {
         return view('livewire.chat.grading.batch', [
             'batch' => $this->batch(),
+            'uploadLimit' => UploadLimits::bytes(),
         ])->layout('layouts.chat', ['title' => 'Penilaian']);
     }
 
