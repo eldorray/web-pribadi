@@ -10,6 +10,7 @@ use App\Models\SiteSetting;
 use App\Services\AiClient;
 use App\Services\AiException;
 use App\Services\ChatFiles;
+use App\Services\GradingFiles;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 
@@ -154,7 +155,7 @@ class Index extends Component
 
     public function updateModel(int $id, string $field, bool|string $value): void
     {
-        if (! in_array($field, ['label', 'is_enabled', 'is_default', 'supports_effort', 'supports_vision', 'is_image'], true)) {
+        if (! in_array($field, ['label', 'is_enabled', 'is_default', 'supports_effort', 'supports_vision', 'is_image', 'is_transcribe'], true)) {
             return;
         }
 
@@ -173,6 +174,7 @@ class Index extends Component
         if ($field === 'is_default' && (bool) $value) {
             AiModel::where('id', '!=', $model->id)
                 ->where('is_image', $model->is_image)
+                ->where('is_transcribe', $model->is_transcribe)
                 ->update(['is_default' => false]);
         }
     }
@@ -228,6 +230,8 @@ class Index extends Component
         foreach ($user->conversations()->get() as $conversation) {
             ChatFiles::deleteForConversation($conversation);
         }
+
+        GradingFiles::deleteForUser($user);
 
         $user->delete();
     }

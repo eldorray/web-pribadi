@@ -17,6 +17,7 @@ class AiModel extends Model
         'supports_effort',
         'supports_vision',
         'is_image',
+        'is_transcribe',
     ];
 
     protected function casts(): array
@@ -27,19 +28,26 @@ class AiModel extends Model
             'supports_effort' => 'boolean',
             'supports_vision' => 'boolean',
             'is_image' => 'boolean',
+            'is_transcribe' => 'boolean',
         ];
     }
 
     /** @param  Builder<AiModel>  $query */
     public function scopeChat(Builder $query): void
     {
-        $query->where('is_enabled', true)->where('is_image', false);
+        $query->where('is_enabled', true)->where('is_image', false)->where('is_transcribe', false);
     }
 
     /** @param  Builder<AiModel>  $query */
     public function scopeImage(Builder $query): void
     {
         $query->where('is_enabled', true)->where('is_image', true);
+    }
+
+    /** @param  Builder<AiModel>  $query */
+    public function scopeTranscribe(Builder $query): void
+    {
+        $query->where('is_enabled', true)->where('is_transcribe', true);
     }
 
     public static function defaultChat(): ?self
@@ -50,5 +58,10 @@ class AiModel extends Model
     public static function defaultImage(): ?self
     {
         return static::image()->orderByDesc('is_default')->orderBy('id')->first();
+    }
+
+    public static function defaultTranscribe(): ?self
+    {
+        return static::transcribe()->orderByDesc('is_default')->orderBy('id')->first();
     }
 }

@@ -26,6 +26,18 @@ class ChatUser extends Model
         return $this->hasMany(ChatConversation::class);
     }
 
+    /** @return HasMany<GradingRubric, $this> */
+    public function rubrics(): HasMany
+    {
+        return $this->hasMany(GradingRubric::class);
+    }
+
+    /** @return HasMany<GradingBatch, $this> */
+    public function gradingBatches(): HasMany
+    {
+        return $this->hasMany(GradingBatch::class);
+    }
+
     /**
      * Short fingerprint of the current PIN, stored in the session cookie so a
      * PIN changed in admin invalidates cookies handed out before the change.

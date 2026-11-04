@@ -142,7 +142,7 @@
                     <table class="w-full min-w-[640px]">
                         <thead>
                             <tr class="border-b" style="border-color: var(--color-line);">
-                                @foreach (['Model', 'Label', 'Aktif', 'Default', 'Effort', 'Baca gambar', 'Buat gambar', ''] as $head)
+                                @foreach (['Model', 'Label', 'Aktif', 'Default', 'Effort', 'Baca gambar', 'Buat gambar', 'Transkripsi', ''] as $head)
                                     <th class="text-left px-3 py-2 text-[11px] uppercase tracking-widest font-semibold"
                                         style="color: var(--color-ink-5);">{{ $head }}</th>
                                 @endforeach
@@ -160,7 +160,7 @@
                                             class="w-40 px-2 py-1 rounded-md border text-xs"
                                             style="border-color: var(--color-line); background: var(--color-card-soft);" />
                                     </td>
-                                    @foreach (['is_enabled', 'is_default', 'supports_effort', 'supports_vision', 'is_image'] as $flag)
+                                    @foreach (['is_enabled', 'is_default', 'supports_effort', 'supports_vision', 'is_image', 'is_transcribe'] as $flag)
                                         <td class="px-3 py-2.5">
                                             <input type="checkbox" @checked($model->{$flag})
                                                 wire:click="updateModel({{ $model->id }}, '{{ $flag }}', {{ $model->{$flag} ? 'false' : 'true' }})"
