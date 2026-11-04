@@ -100,7 +100,7 @@
                 <p class="text-xs mt-2 leading-relaxed" style="color: var(--color-ink-5);">
                     <strong>Baca gambar</strong> = model bisa menerima lampiran gambar.
                     <strong>Buat gambar</strong> = model generator gambar — model ini <em>tidak</em> muncul di
-                    pilihan chat, hanya di mode "Gambar". Jangan centang keduanya untuk model chat biasa.
+                    pilihan chat, hanya di mode "Gambar". Jangan centang keduanya untuk model chat biasa. <strong>Transkripsi</strong> = model pengubah suara menjadi teks untuk Penilaian video; model ini tidak muncul di pilihan chat.
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@
                     <table class="w-full min-w-[640px]">
                         <thead>
                             <tr class="border-b" style="border-color: var(--color-line);">
-                                @foreach (['Model', 'Label', 'Aktif', 'Default', 'Effort', 'Baca gambar', 'Buat gambar', 'Transkripsi', ''] as $head)
+                                @foreach (['Model', 'Label', 'Aktif', 'Transkripsi', 'Default', 'Effort', 'Baca gambar', 'Buat gambar', ''] as $head)
                                     <th class="text-left px-3 py-2 text-[11px] uppercase tracking-widest font-semibold"
                                         style="color: var(--color-ink-5);">{{ $head }}</th>
                                 @endforeach
@@ -160,7 +160,7 @@
                                             class="w-40 px-2 py-1 rounded-md border text-xs"
                                             style="border-color: var(--color-line); background: var(--color-card-soft);" />
                                     </td>
-                                    @foreach (['is_enabled', 'is_default', 'supports_effort', 'supports_vision', 'is_image', 'is_transcribe'] as $flag)
+                                    @foreach (['is_enabled', 'is_transcribe', 'is_default', 'supports_effort', 'supports_vision', 'is_image'] as $flag)
                                         <td class="px-3 py-2.5">
                                             <input type="checkbox" @checked($model->{$flag})
                                                 wire:click="updateModel({{ $model->id }}, '{{ $flag }}', {{ $model->{$flag} ? 'false' : 'true' }})"

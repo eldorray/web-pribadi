@@ -162,4 +162,16 @@ class GradingModelsTest extends TestCase
 
         $this->assertTrue($voice->fresh()->is_transcribe);
     }
+
+    #[Test]
+    public function transcribe_column_is_explained_and_comes_right_after_active(): void
+    {
+        AiModel::create(['model_id' => 'voice', 'label' => 'Voice', 'is_enabled' => true]);
+
+        // Placed last it sat past the table's visible edge, so nobody found it.
+        Livewire::actingAs(User::factory()->create())
+            ->test(Index::class)
+            ->assertSeeInOrder(['Aktif', 'Transkripsi', 'Default', 'Effort'])
+            ->assertSee('model pengubah suara menjadi teks');
+    }
 }
