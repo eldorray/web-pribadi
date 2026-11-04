@@ -36,7 +36,7 @@ Alasannya: menilai puluhan tugas memakan waktu, sebagian besar untuk membaca dan
 - Stack yang ada: Laravel 13, Livewire 4.2, Blade, Tailwind 4. Tanpa Vue/Inertia.
 - **Hosting cPanel shared:** tidak ada queue worker, `ffmpeg` tidak bisa diandalkan, batas upload bisa kecil. Tidak ada dependency baru di server.
 - Penyedia AI OpenAI-compatible (saat ini amanai). Daftar modelnya tidak menunjukkan model yang bisa menonton video langsung, tetapi ada model yang bisa membaca gambar dan model transkripsi (`grok-voice-transcribe-*`, `muse-voice-transcribe-*`).
-- **Belum diverifikasi:** apakah amanai menyediakan `POST /audio/transcriptions`, batas ukurannya, apakah mengembalikan timestamp, dan berapa banyak gambar yang diterima dalam satu request. Langkah pertama rencana implementasi harus memastikan ini.
+- **Sudah diverifikasi di amanai (4 November 2026):** `POST /audio/transcriptions` tersedia untuk `muse-voice-transcribe-1.0` dan `grok-voice-transcribe-2.0`. Keduanya tidak mengembalikan `segments`; dengan `verbose_json` muse mengembalikan `turns` dan grok mengembalikan `words`. Satu request `/chat/completions` ke `gpt-6.1-terra` menerima 30 gambar. Batas ukuran file transkripsi belum diuji.
 - **Batas hosting belum diketahui** (`upload_max_filesize`, `post_max_size`, batas waktu request). Kode tidak boleh mengasumsikan angka tertentu; lihat bagian Antrean.
 - Tugas mahasiswa adalah data orang lain dan dikirim ke penyedia AI. Halaman unggah menampilkan pengingat satu baris tentang hal ini.
 
