@@ -172,3 +172,14 @@ lalu **Ambil model** dan aktifkan model yang dipakai. Tambahkan pengguna chat be
 Pembuatan gambar bisa memakan waktu; request-nya menaikkan `set_time_limit(180)` sendiri.
 Kalau penyedia menolak `/images/generations`, ganti **Mode buat gambar** ke
 `/chat/completions (modalities)`.
+
+## Penilaian (Chat AI)
+
+Setelah upload, jalankan `php artisan migrate`.
+
+- `storage/app/private` harus bisa ditulis, karena tugas mahasiswa dan potongan gambar video disimpan di sana, di luar URL publik.
+- `upload_max_filesize` dan `post_max_size` menentukan batas ukuran gambar dan dokumen (paling besar 10 MB) serta ukuran potongan suara video. Halaman Penilaian membaca nilainya sendiri. Kalau kecil, video tetap jalan dengan potongan yang lebih pendek.
+- PHP dan web server perlu mengizinkan request sampai sekitar 180 detik, untuk transkripsi dan penilaian.
+- Tidak perlu `ffmpeg` atau queue worker. Video diolah di browser dosen, jadi halaman harus tetap terbuka selama proses.
+- Di admin → Chat AI, centang **Aktif** dan **Transkripsi** pada satu model transkripsi, misalnya `amanai/grok-voice-transcribe-2.0`. Tanpa itu, video hanya bisa dinilai dengan transkrip yang ditempel manual.
+

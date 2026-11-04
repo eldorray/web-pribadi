@@ -3325,8 +3325,6 @@ a, button { -webkit-tap-highlight-color: transparent; }
 
 .chat-grading__row-note { flex-basis: 100%; }
 
-.chat-grading__detail { position: sticky; top: 0; }
-
 .chat-grading__detail-head {
     display: flex;
     align-items: flex-start;
@@ -3413,5 +3411,4 @@ a, button { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 767px) {
     .chat-grading__review.has-detail { grid-template-columns: minmax(0, 1fr); }
-    .chat-grading__detail { position: static; }
 }
