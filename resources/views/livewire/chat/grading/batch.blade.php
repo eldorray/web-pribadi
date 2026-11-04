@@ -24,7 +24,7 @@
                 accept=".jpg,.jpeg,.png,.webp,.pdf,.docx,.mp4,.mov,.webm,.m4v,.mkv" />
         </label>
         <p class="chat-grading__meta">
-            Satu file untuk satu mahasiswa. Nama mahasiswa diambil dari nama file.
+            Satu file untuk satu mahasiswa atau kelompok. Namanya diambil dari nama file, misalnya <code>Group 1.jpg</code>.
             Gambar dan dokumen maksimal {{ round($uploadLimit / 1048576, 1) }} MB per file.
             Video maksimal 20 menit, diolah di browser ini dan tidak disimpan di server, jadi biarkan halaman tetap terbuka.
             Suara dari file di atas 500 MB tidak dibaca otomatis, jadi transkripnya perlu ditempel.

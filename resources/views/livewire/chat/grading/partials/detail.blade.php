@@ -7,7 +7,7 @@
 <section class="chat-grading__panel chat-grading__detail" aria-labelledby="detail-heading" wire:key="detail-{{ $item->id }}">
     <div class="chat-grading__detail-head">
         <label class="chat-grading__field chat-grading__detail-name">
-            <span id="detail-heading">Nama mahasiswa</span>
+            <span id="detail-heading">Nama mahasiswa atau kelompok</span>
             <input type="text" value="{{ $item->student_name }}" maxlength="200"
                 wire:change="renameStudent({{ $item->id }}, $event.target.value)" />
         </label>
