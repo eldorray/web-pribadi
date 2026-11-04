@@ -80,6 +80,8 @@ Cara kerja impor:
 - `grading_items`: `grading_batch_id`, `student_name`, `type` (`image`/`video`/`document`), `original_name`, `status`, `files` (JSON path), `transcript`, `extracted_text`, `ai_result` (JSON), `final_scores` (JSON), `lecturer_note`, `approved_at`, `error`.
 - Status: `queued` → `processing` → `ready` → `approved`, atau `failed`.
 - **Satu file = satu mahasiswa** (keputusan pemilik). Nama mahasiswa diisi dari nama file (tanpa ekstensi) dan bisa diedit. Tugas kelompok dianggap satu pengumpulan dengan nama kelompok, dan NIM bisa ditulis di kolom nama. *(keputusan saya)*
+- **Beberapa gambar (keputusan pemilik, tambahan setelah aturan di atas):** carousel atau karya beberapa halaman adalah satu tugas. File `Group 1 - 2.jpg` bergabung ke `Group 1` menurut nomornya, maksimal 10 gambar. Hanya tanda hubung berspasi dan paling banyak dua angka yang dianggap nomor, karena menggabungkan `Group-1` dan `Group-2` secara diam-diam akan mencampur karya dua kelompok. Gambar juga bisa ditambah atau dihapus di panel detail, dan itu mengantre nilai ulang tanpa mengubah nilai final. *(keputusan saya untuk format namanya)*
+- **Skala berbobot:** kriteria bisa punya skor terendah dan bobot, seperti skor 1-4 dengan bobot persen. Total dihitung `skor / skor maksimal x bobot`, dan skor harus bilangan bulat.
 - Batas: 100 tugas per sesi; 10 MB per gambar atau dokumen; video maksimal 20 menit dan 1 GB. *(keputusan saya)*
 
 ### Antrean tanpa queue worker
