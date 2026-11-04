@@ -87,6 +87,9 @@
             <fieldset class="chat-grading__criterion" wire:key="score-{{ $index }}">
                 <legend>
                     {{ $criterion['name'] }}
+                    @isset($criterion['weight'])
+                        <small>(bobot {{ \App\Models\GradingItem::formatScore((float) $criterion['weight']) }})</small>
+                    @endisset
                     @if ($ai[$index]['needs_review'] ?? false)
                         <span class="chat-grading__badge">perlu dicek</span>
                     @endif
@@ -106,12 +109,17 @@
 
                 <label class="chat-grading__field chat-grading__score">
                     <span>
-                        Skor final (maks. {{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }})
+                        @isset($criterion['weight'])
+                            Skor final ({{ \App\Models\GradingItem::formatScore((float) ($criterion['min_score'] ?? 0)) }}–{{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }})
+                        @else
+                            Skor final (maks. {{ \App\Models\GradingItem::formatScore((float) $criterion['max_score']) }})
+                        @endisset
                         @if ($criterion['human_only'] ?? false)
                             <span class="chat-grading__badge is-danger">Wajib diisi dosen</span>
                         @endif
                     </span>
-                    <input type="number" min="0" max="{{ $criterion['max_score'] }}" step="any" inputmode="decimal"
+                    <input type="number" min="{{ $criterion['min_score'] ?? 0 }}" max="{{ $criterion['max_score'] }}"
+                        step="{{ isset($criterion['weight']) ? 1 : 'any' }}" inputmode="decimal"
                         wire:model="scores.{{ $index }}" />
                     @error("scores.$index") <small class="chat-grading__error">{{ $message }}</small> @enderror
                 </label>

@@ -251,10 +251,17 @@ class BatchPage extends Component
         $messages = [];
 
         foreach ($this->batch()->criteria() as $i => $criterion) {
-            $rules["scores.{$i}"] = [$required ? 'required' : 'nullable', 'numeric', 'min:0', "max:{$criterion['max_score']}"];
+            $min = $criterion['min_score'] ?? 0;
+            $rules["scores.{$i}"] = [
+                $required ? 'required' : 'nullable',
+                isset($criterion['weight']) ? 'integer' : 'numeric',
+                "min:{$min}",
+                "max:{$criterion['max_score']}",
+            ];
             $messages["scores.{$i}.required"] = 'Isi skor kriteria ini.';
             $messages["scores.{$i}.numeric"] = 'Skor harus berupa angka.';
-            $messages["scores.{$i}.min"] = 'Skor tidak boleh kurang dari 0.';
+            $messages["scores.{$i}.integer"] = 'Skor harus bilangan bulat.';
+            $messages["scores.{$i}.min"] = "Skor tidak boleh kurang dari {$min}.";
             $messages["scores.{$i}.max"] = "Skor maksimal {$criterion['max_score']}.";
         }
 

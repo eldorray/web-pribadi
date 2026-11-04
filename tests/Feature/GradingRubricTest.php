@@ -428,4 +428,46 @@ class GradingRubricTest extends TestCase
 
         $this->assertTrue(GradingRubric::firstOrFail()->criteria[0]['human_only']);
     }
+
+    #[Test]
+    public function weighted_criterion_is_saved_with_its_scale(): void
+    {
+        $this->page()
+            ->set('name', 'Rubrik')
+            ->set('criteria', [['name' => 'Relevansi', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 20, 'needs_review' => false, 'human_only' => false]])
+            ->call('saveRubric')
+            ->assertHasNoErrors();
+
+        $criterion = GradingRubric::firstOrFail()->criteria[0];
+
+        $this->assertEquals(1, $criterion['min_score']);
+        $this->assertEquals(20, $criterion['weight']);
+    }
+
+    #[Test]
+    public function minimum_must_stay_below_the_maximum_and_weight_positive(): void
+    {
+        $base = ['name' => 'Relevansi', 'description' => '', 'max_score' => 4, 'needs_review' => false, 'human_only' => false];
+
+        $this->page()->set('name', 'Rubrik')->set('criteria', [$base + ['min_score' => 4]])
+            ->call('saveRubric')->assertHasErrors('criteria.0.min_score');
+
+        $this->page()->set('name', 'Rubrik')->set('criteria', [$base + ['weight' => 0]])
+            ->call('saveRubric')->assertHasErrors('criteria.0.weight');
+
+        $this->assertSame(0, GradingRubric::count());
+    }
+
+    #[Test]
+    public function plain_criterion_stores_no_scale_fields(): void
+    {
+        $this->page()
+            ->set('name', 'Rubrik')
+            ->set('criteria', [['name' => 'Isi', 'description' => '', 'max_score' => 10, 'min_score' => '', 'weight' => '', 'needs_review' => false, 'human_only' => false]])
+            ->call('saveRubric')
+            ->assertHasNoErrors();
+
+        $this->assertArrayNotHasKey('weight', GradingRubric::firstOrFail()->criteria[0]);
+        $this->assertArrayNotHasKey('min_score', GradingRubric::firstOrFail()->criteria[0]);
+    }
 }

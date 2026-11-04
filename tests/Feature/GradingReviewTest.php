@@ -525,4 +525,51 @@ class GradingReviewTest extends TestCase
 
         $this->assertNull($item->fresh()->approved_at);
     }
+
+    private function weightedBatch(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Relevansi', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 60],
+            ['name' => 'Kejelasan', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 40],
+        ]]]);
+    }
+
+    #[Test]
+    public function weighted_scores_must_be_whole_levels_on_the_scale(): void
+    {
+        $this->weightedBatch();
+        $item = $this->item(['final_scores' => [3, 2]]);
+
+        foreach ([[0, 2], [5, 2], [2.5, 2]] as $scores) {
+            $this->page()->call('openItem', $item->id)->set('scores', $scores)->call('saveReview')->assertHasErrors('scores.0');
+        }
+
+        $this->assertEquals([3, 2], $item->fresh()->final_scores);
+    }
+
+    #[Test]
+    public function weighted_totals_appear_out_of_the_total_weight(): void
+    {
+        $this->weightedBatch();
+        $this->item(['status' => GradingItem::APPROVED, 'approved_at' => now(), 'final_scores' => [3, 2], 'ai_result' => [
+            'criteria' => [
+                ['score' => 3, 'reason' => 'a', 'evidence' => '', 'needs_review' => false],
+                ['score' => 2, 'reason' => 'b', 'evidence' => '', 'needs_review' => false],
+            ],
+            'summary' => '',
+            'injection_attempt' => false,
+        ]]);
+
+        // 3*60/4 + 2*40/4 = 65
+        $this->page()->assertSee('Usulan AI 65/100')->assertSee('Nilai 65/100');
+    }
+
+    #[Test]
+    public function weighted_criterion_shows_its_scale_and_weight(): void
+    {
+        $this->weightedBatch();
+        $item = $this->item(['final_scores' => [3, 2]]);
+
+        $this->page()->call('openItem', $item->id)->assertSee('Skor final (1–4)')->assertSee('bobot 60');
+    }
 }

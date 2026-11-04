@@ -157,6 +157,22 @@
                             @error("criteria.$index.max_score") <small class="chat-grading__error">{{ $message }}</small> @enderror
                         </label>
 
+                        <div class="chat-grading__pair">
+                            <label class="chat-grading__field">
+                                <span>Skor terendah (opsional)</span>
+                                <input type="number" min="0" step="any" inputmode="decimal"
+                                    wire:model="criteria.{{ $index }}.min_score" />
+                                @error("criteria.$index.min_score") <small class="chat-grading__error">{{ $message }}</small> @enderror
+                            </label>
+                            <label class="chat-grading__field">
+                                <span>Bobot (opsional)</span>
+                                <input type="number" min="0" step="any" inputmode="decimal"
+                                    wire:model="criteria.{{ $index }}.weight" />
+                                @error("criteria.$index.weight") <small class="chat-grading__error">{{ $message }}</small> @enderror
+                            </label>
+                        </div>
+                        <small class="chat-grading__meta">Isi keduanya untuk rubrik berskala, misalnya skor 1–4 dengan bobot 20%: skor maksimal 4, terendah 1, bobot 20.</small>
+
                         <label class="chat-grading__field">
                             <span>Deskripsi dan level penilaian</span>
                             <textarea wire:model="criteria.{{ $index }}.description" rows="3" maxlength="5000"></textarea>

@@ -61,6 +61,20 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
+def make_group_workbook(path):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Penilaian"
+    ws["A1"] = "Judul"
+    for column, heading in zip("ABCDEF", ["No.", "Kelompok", "Anggota Kelompok", "A. Relevansi (20%)", "Nilai Akhir (100)", "Umpan Balik Dosen"]):
+        ws[f"{column}4"] = heading
+    for offset, group in enumerate(["Group 1", "Group 2", "Group 10"]):
+        row = 5 + offset
+        ws[f"A{row}"], ws[f"B{row}"], ws[f"C{row}"] = offset + 1, group, "Anggota"
+        ws[f"E{row}"] = f"=D{row}*20/4"
+    wb.save(path)
+
+
 class DownloadTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
@@ -232,6 +246,52 @@ class FillTest(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 2)
+
+
+class FillGroupsTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.dir.name)
+        self.xlsx = self.root / "kelompok.xlsx"
+        self.csv = self.root / "nilai.csv"
+        self.out = self.root / "hasil.xlsx"
+        make_group_workbook(self.xlsx)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def fill(self, rows):
+        with open(self.csv, "w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["Nama", "A. Relevansi", "Total", "Skala 0-100", "Catatan", "Status"])
+            writer.writerows(rows)
+
+        return subprocess.run(
+            [sys.executable, str(HERE / "grading-fill.py"), str(self.xlsx), str(self.csv), "--out", str(self.out)],
+            capture_output=True, text=True,
+        )
+
+    def test_group_name_decides_the_row_and_group_1_is_not_group_10(self):
+        result = self.fill([
+            ["Group 10", "2", "10", "10", "", "disetujui"],
+            ["group 1 poster", "4", "20", "20", "", "disetujui"],
+        ])
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        ws = openpyxl.load_workbook(self.out)["Penilaian"]
+        self.assertEqual(ws["D5"].value, 4)
+        self.assertIsNone(ws["D6"].value)
+        self.assertEqual(ws["D7"].value, 2)
+
+    def test_note_goes_to_the_feedback_column_and_the_formula_stays(self):
+        self.fill([["Group 2", "3", "15", "15", "Perjelas sumber", "disetujui"]])
+
+        ws = openpyxl.load_workbook(self.out)["Penilaian"]
+        self.assertEqual(ws["F6"].value, "Perjelas sumber")
+        self.assertEqual(ws["E6"].value, "=D6*20/4")
+
+    def test_unknown_group_is_reported(self):
+        self.assertIn("Group 99", self.fill([["Group 99", "3", "15", "15", "", "disetujui"]]).stdout)
 
 
 if __name__ == "__main__":

@@ -130,6 +130,8 @@ class Index extends Component
             'criteria.*.name' => ['required', 'string', 'max:120'],
             'criteria.*.description' => ['nullable', 'string', 'max:5000'],
             'criteria.*.max_score' => ['required', 'numeric', 'gt:0', 'max:100000'],
+            'criteria.*.min_score' => ['nullable', 'numeric', 'min:0', 'lt:criteria.*.max_score'],
+            'criteria.*.weight' => ['nullable', 'numeric', 'gt:0', 'max:100000'],
         ], [
             'name.required' => 'Nama rubrik wajib diisi.',
             'criteria.required' => 'Rubrik butuh minimal satu kriteria.',
@@ -138,6 +140,8 @@ class Index extends Component
             'criteria.*.max_score.required' => 'Skor maksimal wajib diisi.',
             'criteria.*.max_score.numeric' => 'Skor maksimal harus berupa angka.',
             'criteria.*.max_score.gt' => 'Skor maksimal harus lebih dari 0.',
+            'criteria.*.min_score.lt' => 'Skor terendah harus di bawah skor maksimal.',
+            'criteria.*.weight.gt' => 'Bobot harus lebih dari 0.',
         ]);
 
         $attributes = [
@@ -148,7 +152,10 @@ class Index extends Component
                 'description' => trim((string) ($row['description'] ?? '')),
                 'max_score' => (float) $row['max_score'],
                 'human_only' => (bool) ($row['human_only'] ?? false),
-            ], $this->criteria),
+            ] + array_map('floatval', array_filter(
+                ['min_score' => $row['min_score'] ?? null, 'weight' => $row['weight'] ?? null],
+                fn ($value) => $value !== null && $value !== '',
+            )), $this->criteria),
         ];
 
         if ($this->editingId !== null) {

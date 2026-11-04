@@ -153,4 +153,16 @@ class GradingExportTest extends TestCase
         $this->assertSame('1000000001 - Ayu', $rows[1][0]);
         $this->assertSame('1000000012 - Citra', $rows[2][0]);
     }
+
+    #[Test]
+    public function weighted_export_keeps_raw_levels_and_the_weighted_total(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Relevansi', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 60],
+            ['name' => 'Kejelasan', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 40],
+        ]]]);
+        $this->item(['student_name' => 'Group 1', 'status' => GradingItem::APPROVED, 'approved_at' => now(), 'final_scores' => [3, 2]]);
+
+        $this->assertSame(['Group 1', '3', '2', '65', '65', '', 'disetujui'], $this->rows()[1]);
+    }
 }

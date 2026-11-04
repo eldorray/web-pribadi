@@ -174,4 +174,46 @@ class GradingModelsTest extends TestCase
             ->assertSeeInOrder(['Aktif', 'Transkripsi', 'Default', 'Effort'])
             ->assertSee('model pengubah suara menjadi teks');
     }
+
+    private function weightedBatch(): GradingBatch
+    {
+        $batch = $this->batch();
+        $batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'A', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 20],
+            ['name' => 'B', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 15],
+            ['name' => 'C', 'description' => '', 'max_score' => 4, 'min_score' => 1, 'weight' => 65, 'human_only' => true],
+        ]]]);
+
+        return $batch;
+    }
+
+    #[Test]
+    public function weighted_totals_follow_the_spreadsheet_formula(): void
+    {
+        $batch = $this->weightedBatch();
+        // SUM(3*20/4, 2*15/4, 4*65/4)
+        $item = $this->item($batch, ['final_scores' => [3, 2, 4]]);
+
+        $this->assertSame(100.0, $batch->maxScore());
+        $this->assertSame(35.0, $batch->aiMaxScore());
+        $this->assertSame(87.5, $item->finalTotal());
+        $this->assertSame(87.5, $item->finalScaled());
+    }
+
+    #[Test]
+    public function weighted_ai_total_skips_the_lecturers_criterion(): void
+    {
+        $item = $this->item($this->weightedBatch(), ['ai_result' => [
+            'criteria' => [
+                ['score' => 3, 'reason' => '', 'evidence' => '', 'needs_review' => false],
+                ['score' => 2, 'reason' => '', 'evidence' => '', 'needs_review' => false],
+                ['score' => null, 'reason' => '', 'evidence' => '', 'needs_review' => false],
+            ],
+            'summary' => '',
+            'injection_attempt' => false,
+        ]]);
+
+        // 3*20/4 + 2*15/4
+        $this->assertSame(22.5, $item->aiTotal());
+    }
 }

@@ -92,7 +92,7 @@ class GradingItem extends Model
     {
         $criteria = $this->ai_result['criteria'] ?? null;
 
-        return is_array($criteria) ? (float) array_sum(array_column($criteria, 'score')) : null;
+        return is_array($criteria) ? $this->batch->totalOf(array_column($criteria, 'score')) : null;
     }
 
     public function finalTotal(): ?float
@@ -103,7 +103,7 @@ class GradingItem extends Model
             return null;
         }
 
-        return (float) array_sum($scores);
+        return $this->batch->totalOf($scores);
     }
 
     public function finalScaled(): ?float

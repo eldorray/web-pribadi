@@ -496,4 +496,61 @@ class GradingAiTest extends TestCase
         $this->assertStringNotContainsString('Bunyi jelas', $system);
         $this->assertStringContainsString('Tata bahasa', $system);
     }
+
+    private function weightedBatch(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Relevansi', 'description' => 'Topik relevan', 'max_score' => 4, 'min_score' => 1, 'weight' => 20],
+            ['name' => 'Kejelasan', 'description' => 'Pesan jelas', 'max_score' => 4, 'min_score' => 1, 'weight' => 15],
+        ]]]);
+    }
+
+    #[Test]
+    public function weighted_scores_stay_whole_levels_inside_the_scale(): void
+    {
+        $this->weightedBatch();
+        $this->fakeReply($this->reply([0, 3.6]));
+
+        $result = (new GradingAi)->grade($this->essay());
+
+        $this->assertSame(1.0, $result['criteria'][0]['score']);
+        $this->assertSame(4.0, $result['criteria'][1]['score']);
+    }
+
+    #[Test]
+    public function weighted_rubric_tells_the_model_the_scale(): void
+    {
+        $this->weightedBatch();
+        $this->fakeReply($this->reply([3, 2]));
+
+        (new GradingAi)->grade($this->essay());
+
+        $this->assertStringContainsString('skor bulat 1 sampai 4', $this->sentMessages()[0]['content']);
+    }
+
+    #[Test]
+    public function draft_rubric_keeps_a_weighted_scale(): void
+    {
+        $this->fakeReply($this->rubricReply([
+            ['name' => 'Relevansi', 'description' => 'Topik', 'max_score' => 4, 'min_score' => 1, 'weight' => 20, 'needs_review' => false],
+        ]));
+
+        $criterion = (new GradingAi)->draftRubric('Relevansi 20%, skor 1-4')['criteria'][0];
+
+        $this->assertSame(4.0, $criterion['max_score']);
+        $this->assertSame(1.0, $criterion['min_score']);
+        $this->assertSame(20.0, $criterion['weight']);
+    }
+
+    #[Test]
+    public function draft_rubric_rejects_a_minimum_above_the_maximum(): void
+    {
+        $this->fakeReply($this->rubricReply([
+            ['name' => 'Relevansi', 'description' => '', 'max_score' => 4, 'min_score' => 9, 'needs_review' => false],
+        ]));
+
+        $this->expectException(AiException::class);
+
+        (new GradingAi)->draftRubric('Relevansi');
+    }
 }
