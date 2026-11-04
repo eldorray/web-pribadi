@@ -5,6 +5,7 @@ use App\Http\Controllers\ChatAuthController;
 use App\Http\Controllers\ChatFileController;
 use App\Http\Controllers\ChatStopController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\GradingExportController;
 use App\Http\Controllers\GradingProcessController;
 use App\Http\Controllers\GradingUploadController;
 use App\Http\Controllers\GradingVideoController;
@@ -39,6 +40,7 @@ Route::prefix('chat')->group(function () {
         Route::get('/penilaian', GradingIndex::class)->name('chat.grading');
         Route::get('/penilaian/{batch}', BatchPage::class)->name('chat.grading.batch')->whereNumber('batch');
         Route::post('/penilaian/{batch}/items', [GradingUploadController::class, 'store'])->name('chat.grading.items.store')->whereNumber('batch');
+        Route::get('/penilaian/{batch}/export', GradingExportController::class)->name('chat.grading.export')->whereNumber('batch');
         Route::post('/penilaian/{batch}/videos', [GradingVideoController::class, 'store'])->name('chat.grading.videos.store')->whereNumber('batch');
         Route::post('/penilaian/items/{item}/frames', [GradingVideoController::class, 'frames'])->name('chat.grading.videos.frames')->whereNumber('item');
         Route::post('/penilaian/items/{item}/audio', [GradingVideoController::class, 'audio'])->name('chat.grading.videos.audio')->whereNumber('item');

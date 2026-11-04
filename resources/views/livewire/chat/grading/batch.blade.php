@@ -4,10 +4,14 @@
             title="Kembali ke Penilaian">
             <x-icon name="arrow_back" :size="20" />
         </a>
-        <div>
+        <div class="chat-grading__header-copy">
             <h1 class="chat-grading__title">{{ $batch->name }}</h1>
             <p class="chat-grading__meta">{{ $batch->rubric_snapshot['name'] ?? '' }} · {{ $batch->model }}</p>
         </div>
+        <a href="{{ route('chat.grading.export', $batch) }}" class="chat-grading__secondary">
+            <x-icon name="download" :size="16" />
+            Unduh CSV
+        </a>
     </header>
 
     <section class="chat-grading__panel" data-grading-queue data-upload-limit="{{ $uploadLimit }}"
@@ -28,14 +32,20 @@
         <ul class="chat-grading__messages" data-grading-messages></ul>
     </section>
 
-    <section class="chat-grading__results" aria-labelledby="results-heading">
-        <div class="chat-grading__results-head">
-            <h2 id="results-heading" class="chat-grading__heading">Tugas ({{ $items->count() }})</h2>
-            @if ($items->contains('status', \App\Models\GradingItem::QUEUED))
-                <button type="button" class="chat-grading__primary" data-grading-run>Mulai menilai</button>
-            @endif
-        </div>
+    <div class="chat-grading__review {{ $open ? 'has-detail' : '' }}">
+        <section class="chat-grading__results" aria-labelledby="results-heading">
+            <div class="chat-grading__results-head">
+                <h2 id="results-heading" class="chat-grading__heading">Tugas ({{ $items->count() }})</h2>
+                @if ($items->contains('status', \App\Models\GradingItem::QUEUED))
+                    <button type="button" class="chat-grading__primary" data-grading-run>Mulai menilai</button>
+                @endif
+            </div>
 
-        @include('livewire.chat.grading.partials.table')
-    </section>
+            @include('livewire.chat.grading.partials.table')
+        </section>
+
+        @if ($open)
+            @include('livewire.chat.grading.partials.detail', ['item' => $open])
+        @endif
+    </div>
 </div>

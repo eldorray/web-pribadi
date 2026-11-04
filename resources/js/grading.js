@@ -348,6 +348,13 @@ async function gradeQueued(queue) {
     }
 }
 
+window.addEventListener('grading-run', () => {
+    const queue = document.querySelector('[data-grading-queue]');
+
+    // After Livewire has rendered the row this event just queued.
+    if (queue) setTimeout(() => gradeQueued(queue));
+});
+
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element) || !event.target.closest('[data-grading-run]')) return;
 

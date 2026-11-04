@@ -72,6 +72,22 @@ class GradingItem extends Model
         return $this->belongsTo(GradingBatch::class, 'grading_batch_id');
     }
 
+    public function needsReview(): bool
+    {
+        return in_array(true, array_column($this->ai_result['criteria'] ?? [], 'needs_review'), true);
+    }
+
+    public function injectionAttempt(): bool
+    {
+        return (bool) ($this->ai_result['injection_attempt'] ?? false);
+    }
+
+    /** 22.0 reads "22", 66.67 reads "66.67". */
+    public static function formatScore(float $score): string
+    {
+        return rtrim(rtrim(number_format($score, 2, '.', ''), '0'), '.');
+    }
+
     public function aiTotal(): ?float
     {
         $criteria = $this->ai_result['criteria'] ?? null;

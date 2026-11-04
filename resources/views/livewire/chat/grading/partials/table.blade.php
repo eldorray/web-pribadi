@@ -2,7 +2,7 @@
     $statusLabels = [
         'preparing' => 'Diolah di browser',
         'queued' => 'Menunggu',
-        'processing' => 'Dinilai',
+        'processing' => 'Sedang dinilai',
         'ready' => 'Perlu diperiksa',
         'approved' => 'Disetujui',
         'failed' => 'Gagal',
@@ -11,13 +11,39 @@
 
 <ul class="chat-grading__rows">
     @forelse ($items as $item)
-        <li class="chat-grading__row" wire:key="item-{{ $item->id }}"
+        <li class="chat-grading__row {{ $openItemId === $item->id ? 'is-open' : '' }}" wire:key="item-{{ $item->id }}"
             @if ($item->status === 'queued') data-grade-url="{{ route('chat.grading.items.grade', $item) }}"
                 data-student-name="{{ $item->student_name }}" @endif>
-            <strong>{{ $item->student_name }}</strong>
-            <span class="chat-grading__badge">{{ $statusLabels[$item->status] ?? $item->status }}</span>
+            <button type="button" class="chat-grading__row-main" wire:click="openItem({{ $item->id }})">
+                <strong>{{ $item->student_name }}</strong>
+                <small>
+                    @if ($item->aiTotal() !== null)
+                        Usulan AI {{ \App\Models\GradingItem::formatScore($item->aiTotal()) }}/{{ \App\Models\GradingItem::formatScore($maxScore) }}
+                        ·
+                    @endif
+                    @if ($item->approved_at)
+                        <b>Nilai {{ \App\Models\GradingItem::formatScore((float) $item->finalTotal()) }}/{{ \App\Models\GradingItem::formatScore($maxScore) }}</b>
+                        (skala {{ \App\Models\GradingItem::formatScore((float) $item->finalScaled()) }})
+                    @else
+                        Belum disetujui
+                    @endif
+                </small>
+            </button>
+
+            <span class="chat-grading__badges">
+                @if ($item->injectionAttempt())
+                    <span class="chat-grading__badge is-danger">Tugas ini coba memberi perintah ke AI</span>
+                @endif
+                @if ($item->needsReview())
+                    <span class="chat-grading__badge">perlu dicek</span>
+                @endif
+                <span class="chat-grading__badge">{{ $statusLabels[$item->status] ?? $item->status }}</span>
+            </span>
+
             @if ($item->error)
-                <small class="chat-grading__error">{{ $item->error }}</small>
+                <small class="chat-grading__error chat-grading__row-note">{{ $item->error }}</small>
+            @elseif ($item->status === 'preparing')
+                <small class="chat-grading__row-note chat-grading__meta">Pilih ulang file video ini kalau pengolahannya terhenti.</small>
             @endif
         </li>
     @empty
