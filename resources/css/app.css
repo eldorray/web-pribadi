@@ -3435,3 +3435,29 @@ a, button { -webkit-tap-highlight-color: transparent; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.625rem;
 }
+
+.chat-grading__images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+}
+
+.chat-grading__images:has(figure:only-child) { grid-template-columns: minmax(0, 1fr); }
+
+.chat-grading__images figure { margin: 0; min-width: 0; }
+
+.chat-grading__images img {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    background: var(--color-card-soft);
+}
+
+.chat-grading__images figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--color-ink-4);
+}

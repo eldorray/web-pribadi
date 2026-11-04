@@ -26,6 +26,9 @@ class GradingItem extends Model
 
     public const FAILED = 'failed';
 
+    /** One carousel. Every image is sent to the model, so this bounds the payload. */
+    public const MAX_IMAGES = 10;
+
     public const TRANSCRIPT_PENDING = 'pending';
 
     public const TRANSCRIPT_DONE = 'done';

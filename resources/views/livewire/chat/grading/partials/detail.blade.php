@@ -27,11 +27,31 @@
     @endif
 
     <div class="chat-grading__preview">
-        @if ($item->type === 'image' && isset($files[0]))
-            <a href="{{ route('chat.grading.file', ['item' => $item, 'index' => 0]) }}" target="_blank" rel="noopener">
-                <img src="{{ route('chat.grading.file', ['item' => $item, 'index' => 0]) }}"
-                    alt="Tugas {{ $item->student_name }}" loading="lazy" />
-            </a>
+        @if ($item->type === 'image')
+            <div class="chat-grading__images">
+                @foreach ($files as $index => $file)
+                    <figure wire:key="image-{{ $item->id }}-{{ $file['path'] ?? $index }}">
+                        <a href="{{ route('chat.grading.file', ['item' => $item, 'index' => $index]) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('chat.grading.file', ['item' => $item, 'index' => $index]) }}"
+                                alt="Gambar {{ $index + 1 }} tugas {{ $item->student_name }}" loading="lazy" />
+                        </a>
+                        @if (count($files) > 1)
+                            <figcaption>
+                                Gambar {{ $index + 1 }}
+                                <button type="button" class="chat-grading__link" wire:click="removeImage({{ $item->id }}, {{ $index }})"
+                                    wire:confirm="Hapus gambar {{ $index + 1 }} dan nilai ulang tugas ini?">Hapus</button>
+                            </figcaption>
+                        @endif
+                    </figure>
+                @endforeach
+            </div>
+
+            <label class="chat-grading__secondary chat-grading__picker">
+                <x-icon name="attach_file" :size="16" />
+                Tambah gambar
+                <input type="file" class="sr-only" multiple accept=".jpg,.jpeg,.png,.webp" data-grading-add
+                    data-add-url="{{ route('chat.grading.items.images', $item) }}" />
+            </label>
         @elseif ($item->type === 'document')
             @if (isset($files[0]))
                 <a href="{{ route('chat.grading.file', ['item' => $item, 'index' => 0]) }}" target="_blank" rel="noopener"

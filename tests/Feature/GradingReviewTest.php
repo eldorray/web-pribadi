@@ -572,4 +572,83 @@ class GradingReviewTest extends TestCase
 
         $this->page()->call('openItem', $item->id)->assertSee('Skor final (1–4)')->assertSee('bobot 60');
     }
+
+    private function carousel(int $images = 3): GradingItem
+    {
+        $files = [];
+
+        for ($i = 1; $i <= $images; $i++) {
+            Storage::disk('local')->put("grading/1/s{$i}.png", 'PNG');
+            $files[] = ['path' => "grading/1/s{$i}.png", 'name' => "s{$i}.png", 'mime' => 'image/png'];
+        }
+
+        return $this->item(['type' => 'image', 'files' => $files, 'extracted_text' => null]);
+    }
+
+    #[Test]
+    public function every_image_is_shown_and_the_list_counts_them(): void
+    {
+        $item = $this->carousel();
+
+        $page = $this->page()->assertSee('3 gambar')->call('openItem', $item->id);
+
+        foreach ([0, 1, 2] as $index) {
+            $page->assertSeeHtml(route('chat.grading.file', ['item' => $item, 'index' => $index]));
+        }
+    }
+
+    #[Test]
+    public function detail_panel_offers_adding_an_image(): void
+    {
+        $item = $this->carousel();
+
+        $this->page()->call('openItem', $item->id)->assertSeeHtml(route('chat.grading.items.images', $item));
+    }
+
+    #[Test]
+    public function removing_an_image_deletes_it_and_queues_a_regrade(): void
+    {
+        $item = $this->carousel();
+
+        $this->page()->call('openItem', $item->id)->call('removeImage', $item->id, 1)->assertDispatched('grading-run');
+
+        $item->refresh();
+
+        $this->assertSame(['s1.png', 's3.png'], array_column($item->files, 'name'));
+        $this->assertSame(GradingItem::QUEUED, $item->status);
+        $this->assertEquals([7, 15], $item->final_scores);
+        Storage::disk('local')->assertMissing('grading/1/s2.png');
+    }
+
+    #[Test]
+    public function the_last_image_cannot_be_removed(): void
+    {
+        $item = $this->carousel(1);
+
+        $this->page()->call('openItem', $item->id)->call('removeImage', $item->id, 0);
+
+        $this->assertCount(1, $item->fresh()->files);
+        Storage::disk('local')->assertExists('grading/1/s1.png');
+    }
+
+    #[Test]
+    public function removing_an_unknown_image_or_from_a_video_does_nothing(): void
+    {
+        $item = $this->carousel(2);
+        $video = $this->item(['type' => 'video', 'files' => [['path' => 'grading/1/s1.png', 'at' => 0], ['path' => 'grading/1/s2.png', 'at' => 1]], 'extracted_text' => null]);
+
+        $this->page()->call('removeImage', $item->id, 9)->call('removeImage', $video->id, 0);
+
+        $this->assertCount(2, $item->fresh()->files);
+        $this->assertCount(2, $video->fresh()->files);
+    }
+
+    #[Test]
+    public function removing_an_image_from_another_users_submission_is_404(): void
+    {
+        $other = ChatUser::create(['name' => 'Rina', 'pin' => Hash::make('654321')]);
+        $foreign = $this->item(['type' => 'image', 'files' => [['path' => 'x', 'name' => 'x', 'mime' => 'image/png']]], $this->makeBatch($other));
+
+        $this->assertThrows(fn () => $this->page()->call('removeImage', $foreign->id, 0), ModelNotFoundException::class);
+    }
 }

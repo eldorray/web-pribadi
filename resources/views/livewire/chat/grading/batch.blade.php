@@ -25,6 +25,7 @@
         </label>
         <p class="chat-grading__meta">
             Satu file untuk satu mahasiswa atau kelompok. Namanya diambil dari nama file, misalnya <code>Group 1.jpg</code>.
+            Untuk carousel atau beberapa halaman, beri nama <code>Group 1 - 1.jpg</code>, <code>Group 1 - 2.jpg</code>, dan seterusnya (maksimal 10 gambar).
             Gambar dan dokumen maksimal {{ round($uploadLimit / 1048576, 1) }} MB per file.
             Video maksimal 20 menit, diolah di browser ini dan tidak disimpan di server, jadi biarkan halaman tetap terbuka.
             Suara dari file di atas 500 MB tidak dibaca otomatis, jadi transkripnya perlu ditempel.

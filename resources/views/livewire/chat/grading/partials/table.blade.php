@@ -37,6 +37,9 @@
                 @if ($item->needsReview())
                     <span class="chat-grading__badge">perlu dicek</span>
                 @endif
+                @if ($item->type === 'image' && count((array) $item->files) > 1)
+                    <span class="chat-grading__badge">{{ count($item->files) }} gambar</span>
+                @endif
                 <span class="chat-grading__badge">{{ $statusLabels[$item->status] ?? $item->status }}</span>
             </span>
 

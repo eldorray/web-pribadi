@@ -383,9 +383,43 @@ document.addEventListener('click', (event) => {
     if (queue) gradeQueued(queue);
 });
 
+async function addImages(queue, url, files) {
+    queue.querySelector('[data-grading-messages]')?.replaceChildren();
+
+    for (const [index, file] of files.entries()) {
+        setProgress(queue, `Menambah gambar ${index + 1} dari ${files.length}: ${file.name}`);
+
+        const body = new FormData();
+        body.append('file', file);
+
+        try {
+            await postForm(url, body);
+        } catch (error) {
+            report(queue, `${file.name}: ${error.message}`);
+        }
+    }
+
+    await refreshPage(queue);
+    setProgress(queue, '');
+    gradeQueued(queue);
+}
+
 document.addEventListener('change', (event) => {
     const input = event.target;
-    if (!(input instanceof HTMLInputElement) || !input.matches('[data-grading-files]')) return;
+    if (!(input instanceof HTMLInputElement)) return;
+
+    if (input.matches('[data-grading-add]')) {
+        const queue = document.querySelector('[data-grading-queue]');
+        const url = input.dataset.addUrl;
+        const files = Array.from(input.files ?? []);
+        input.value = '';
+
+        if (queue && url && files.length > 0) addImages(queue, url, files);
+
+        return;
+    }
+
+    if (!input.matches('[data-grading-files]')) return;
 
     const queue = input.closest('[data-grading-queue]');
     const files = Array.from(input.files ?? []);

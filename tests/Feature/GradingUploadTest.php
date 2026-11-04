@@ -237,4 +237,152 @@ class GradingUploadTest extends TestCase
             ->assertOk()
             ->assertSee('data-max-files="'.UploadLimits::files().'"', false);
     }
+
+    #[Test]
+    public function numbered_images_join_one_submission_in_number_order(): void
+    {
+        $this->upload($this->png('Group 1 - 2.png'))->assertOk()->assertJson(['student_name' => 'Group 1']);
+        $this->upload($this->png('Group 1 - 10.png'))->assertOk();
+        $this->upload($this->png('Group 1 - 1.png'))->assertOk();
+
+        $item = GradingItem::firstOrFail();
+
+        $this->assertSame(1, GradingItem::count());
+        $this->assertSame('Group 1', $item->student_name);
+        $this->assertSame(['Group 1 - 1.png', 'Group 1 - 2.png', 'Group 1 - 10.png'], array_column($item->files, 'name'));
+    }
+
+    #[Test]
+    public function the_plain_name_joins_its_numbered_images_in_either_order(): void
+    {
+        $this->upload($this->png('Group 1 - 2.png'))->assertOk();
+        $this->upload($this->png('Group 1.png'))->assertOk();
+        $this->upload($this->png('Group 2.png'))->assertOk();
+        $this->upload($this->png('Group 2 - 2.png'))->assertOk();
+
+        $this->assertSame(2, GradingItem::count());
+        $this->assertSame(['Group 1.png', 'Group 1 - 2.png'], array_column(GradingItem::where('student_name', 'Group 1')->first()->files, 'name'));
+        $this->assertSame(['Group 2.png', 'Group 2 - 2.png'], array_column(GradingItem::where('student_name', 'Group 2')->first()->files, 'name'));
+    }
+
+    #[Test]
+    public function similar_names_without_the_spaced_dash_stay_separate(): void
+    {
+        foreach (['Group-1.png', 'Group-2.png', 'Group_1.png', 'Group_2.png', 'Group 1.png', 'Group 10.png', 'PROJECT_NAMA_2223000001.png'] as $name) {
+            $this->upload($this->png($name))->assertOk();
+        }
+
+        $this->assertSame(7, GradingItem::count());
+    }
+
+    #[Test]
+    public function a_long_number_after_the_dash_is_a_nim_not_a_page(): void
+    {
+        $this->upload($this->png('Ayu - 1000000001.png'))->assertOk();
+        $this->upload($this->png('Budi - 1000000002.png'))->assertOk();
+
+        $this->assertSame(['Ayu - 1000000001', 'Budi - 1000000002'], GradingItem::orderBy('id')->pluck('student_name')->all());
+    }
+
+    #[Test]
+    public function uploading_the_same_numbered_image_twice_is_rejected(): void
+    {
+        $this->upload($this->png('Group 1 - 1.png'))->assertOk();
+        $this->upload($this->png('Group 1 - 1.png'))->assertStatus(422)->assertJsonStructure(['message']);
+
+        $this->assertCount(1, GradingItem::firstOrFail()->files);
+    }
+
+    #[Test]
+    public function one_submission_stops_at_ten_images(): void
+    {
+        for ($i = 1; $i <= 10; $i++) {
+            $this->upload($this->png("Group 1 - {$i}.png"))->assertOk();
+        }
+
+        $this->upload($this->png('Group 1 - 11.png'))->assertStatus(422);
+
+        $this->assertCount(10, GradingItem::firstOrFail()->files);
+    }
+
+    #[Test]
+    public function joining_images_does_not_count_against_the_batch_limit(): void
+    {
+        $this->upload($this->png('Group 1 - 1.png'))->assertOk();
+
+        for ($i = 0; $i < 99; $i++) {
+            $this->batch->items()->create(['student_name' => "M{$i}", 'type' => 'image', 'original_name' => "m{$i}.png", 'status' => GradingItem::QUEUED]);
+        }
+
+        $this->upload($this->png('Group 1 - 2.png'))->assertOk();
+    }
+
+    #[Test]
+    public function adding_an_image_to_a_graded_submission_queues_a_regrade_and_keeps_the_lecturers_scores(): void
+    {
+        $this->upload($this->png('Group 1 - 1.png'))->assertOk();
+
+        $item = GradingItem::firstOrFail();
+        $item->update(['status' => GradingItem::READY, 'final_scores' => [5], 'lecturer_note' => 'Catatan']);
+
+        $this->upload($this->png('Group 1 - 2.png'))->assertOk();
+
+        $item->refresh();
+
+        $this->assertSame(GradingItem::QUEUED, $item->status);
+        $this->assertEquals([5], $item->final_scores);
+        $this->assertSame('Catatan', $item->lecturer_note);
+    }
+
+    #[Test]
+    public function a_submission_being_graded_refuses_more_images(): void
+    {
+        $this->upload($this->png('Group 1 - 1.png'))->assertOk();
+        GradingItem::firstOrFail()->update(['status' => GradingItem::PROCESSING]);
+
+        $this->upload($this->png('Group 1 - 2.png'))->assertStatus(422);
+
+        $this->assertCount(1, GradingItem::firstOrFail()->files);
+    }
+
+    private function addImage(GradingItem $item, UploadedFile $file, ?ChatUser $as = null)
+    {
+        return $this->withCookie(ChatPin::COOKIE, ChatPin::cookieValue($as ?? $this->user))
+            ->post(route('chat.grading.items.images', $item), ['file' => $file]);
+    }
+
+    #[Test]
+    public function an_image_can_be_added_from_the_detail_panel_whatever_its_name(): void
+    {
+        $this->upload($this->png('Group 1.png'))->assertOk();
+        $item = GradingItem::firstOrFail();
+
+        $this->addImage($item, $this->png('slide kedua.png'))->assertOk();
+
+        $this->assertSame(['Group 1.png', 'slide kedua.png'], array_column($item->fresh()->files, 'name'));
+    }
+
+    #[Test]
+    public function only_images_can_be_added_to_a_submission(): void
+    {
+        $this->upload($this->png('Group 1.png'))->assertOk();
+        $item = GradingItem::firstOrFail();
+
+        $this->addImage($item, $this->realFile('Esai.docx', file_get_contents(__DIR__.'/../fixtures/sample.docx')))->assertStatus(422);
+
+        $essay = $this->batch->items()->create(['student_name' => 'Esai', 'type' => 'document', 'original_name' => 'e.docx', 'status' => GradingItem::READY]);
+
+        $this->addImage($essay, $this->png('x.png'))->assertStatus(422);
+    }
+
+    #[Test]
+    public function adding_an_image_to_another_users_submission_is_404(): void
+    {
+        $this->upload($this->png('Group 1.png'))->assertOk();
+        $other = ChatUser::create(['name' => 'Rina', 'pin' => Hash::make('654321')]);
+
+        $this->addImage(GradingItem::firstOrFail(), $this->png('x.png'), $other)->assertNotFound();
+
+        $this->assertCount(1, GradingItem::firstOrFail()->files);
+    }
 }

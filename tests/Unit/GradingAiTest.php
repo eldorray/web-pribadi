@@ -553,4 +553,34 @@ class GradingAiTest extends TestCase
 
         (new GradingAi)->draftRubric('Relevansi');
     }
+
+    #[Test]
+    public function every_image_of_a_submission_is_sent_in_order(): void
+    {
+        Storage::disk('local')->put('grading/1/a.png', 'SATU');
+        Storage::disk('local')->put('grading/1/b.jpg', 'DUA');
+        $item = $this->batch->items()->create([
+            'student_name' => 'Group 1',
+            'type' => 'image',
+            'original_name' => 'a.png',
+            'status' => GradingItem::PROCESSING,
+            'files' => [
+                ['path' => 'grading/1/a.png', 'name' => 'a.png', 'mime' => 'image/png'],
+                ['path' => 'grading/1/b.jpg', 'name' => 'b.jpg', 'mime' => 'image/jpeg'],
+            ],
+        ]);
+        $this->fakeReply($this->reply());
+
+        (new GradingAi)->grade($item);
+
+        $content = $this->sentMessages()[1]['content'];
+        $encoded = json_encode($content, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $this->assertSame(2, $this->countImages($content));
+        $this->assertLessThan(
+            strpos($encoded, 'data:image/jpeg;base64,'.base64_encode('DUA')),
+            strpos($encoded, 'data:image/png;base64,'.base64_encode('SATU')),
+        );
+        $this->assertStringContainsString('Gambar 2 dari 2', $encoded);
+    }
 }

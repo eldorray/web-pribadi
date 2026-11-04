@@ -9,6 +9,7 @@ use App\Models\GradingBatch;
 use App\Models\GradingItem;
 use App\Services\GradingFiles;
 use App\Support\UploadLimits;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
@@ -22,7 +23,7 @@ class BatchPage extends Component
 {
     /** Columns the list needs; transcripts and essay text can be very large. */
     private const LIST_COLUMNS = [
-        'id', 'grading_batch_id', 'student_name', 'type', 'status', 'transcript_status',
+        'id', 'grading_batch_id', 'student_name', 'type', 'status', 'transcript_status', 'files',
         'ai_result', 'final_scores', 'approved_at', 'error',
     ];
 
@@ -116,6 +117,22 @@ class BatchPage extends Component
         }
 
         $item->update(['status' => GradingItem::QUEUED, 'error' => null]);
+        $this->dispatch('grading-run');
+    }
+
+    public function removeImage(int $id, int $index): void
+    {
+        $item = $this->ownedItem($id);
+        $files = array_values((array) $item->files);
+
+        if ($item->type !== 'image' || ! isset($files[$index]) || count($files) < 2 || $item->status === GradingItem::PROCESSING) {
+            return;
+        }
+
+        Storage::disk('local')->delete((string) ($files[$index]['path'] ?? ''));
+        unset($files[$index]);
+
+        $item->update(['files' => array_values($files), 'status' => GradingItem::QUEUED, 'error' => null]);
         $this->dispatch('grading-run');
     }
 

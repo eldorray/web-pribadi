@@ -45,6 +45,7 @@ Route::prefix('chat')->group(function () {
         Route::post('/penilaian/items/{item}/frames', [GradingVideoController::class, 'frames'])->name('chat.grading.videos.frames')->whereNumber('item');
         Route::post('/penilaian/items/{item}/audio', [GradingVideoController::class, 'audio'])->name('chat.grading.videos.audio')->whereNumber('item');
         Route::post('/penilaian/items/{item}/ready', [GradingVideoController::class, 'ready'])->name('chat.grading.videos.ready')->whereNumber('item');
+        Route::post('/penilaian/items/{item}/images', [GradingUploadController::class, 'addImage'])->name('chat.grading.items.images')->whereNumber('item');
         Route::post('/penilaian/items/{item}/grade', [GradingProcessController::class, 'grade'])->name('chat.grading.items.grade')->whereNumber('item');
         Route::get('/penilaian/items/{item}/file/{index}', [GradingUploadController::class, 'file'])->name('chat.grading.file')->whereNumber(['item', 'index']);
         Route::get('/file/{message}/{index}', ChatFileController::class)->name('chat.file');

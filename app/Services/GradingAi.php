@@ -159,13 +159,17 @@ class GradingAi
         }
 
         if ($item->type === 'image') {
-            $file = ((array) $item->files)[0] ?? [];
+            $files = array_values((array) $item->files);
+            $parts = [['type' => 'text', 'text' => $marker]];
 
-            return [
-                ['type' => 'text', 'text' => "{$marker}\nGambar tugas dari file {$item->original_name}:"],
-                $this->imagePart((string) ($file['path'] ?? ''), (string) ($file['mime'] ?? 'image/jpeg')),
-                ['type' => 'text', 'text' => $marker],
-            ];
+            foreach ($files as $i => $file) {
+                $parts[] = ['type' => 'text', 'text' => 'Gambar '.($i + 1).' dari '.count($files).' ('.($file['name'] ?? $item->original_name).'):'];
+                $parts[] = $this->imagePart((string) ($file['path'] ?? ''), (string) ($file['mime'] ?? 'image/jpeg'));
+            }
+
+            $parts[] = ['type' => 'text', 'text' => $marker];
+
+            return $parts;
         }
 
         $parts = [['type' => 'text', 'text' => "{$marker}\n".$this->videoHeader($item)]];
