@@ -3240,3 +3240,42 @@ a, button { -webkit-tap-highlight-color: transparent; }
     font-size: 0.8125rem;
     color: var(--color-error);
 }
+
+.chat-grading__results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.chat-grading__results-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.chat-grading__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    list-style: none;
+}
+
+.chat-grading__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    font-size: 0.875rem;
+}
+
+.chat-grading__row > strong { flex: 1; min-width: 10rem; }
+
+.chat-grading__rows > .chat-grading__empty {
+    font-size: 0.8125rem;
+    color: var(--color-ink-4);
+}

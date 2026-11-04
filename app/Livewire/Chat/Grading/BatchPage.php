@@ -20,13 +20,19 @@ class BatchPage extends Component
 
     public function mount(int $batch): void
     {
-        $this->batchId = $this->chatUser()->gradingBatches()->findOrFail($batch)->getKey();
+        $owned = $this->chatUser()->gradingBatches()->findOrFail($batch);
+        $owned->releaseStaleItems();
+
+        $this->batchId = $owned->getKey();
     }
 
     public function render()
     {
+        $batch = $this->batch();
+
         return view('livewire.chat.grading.batch', [
-            'batch' => $this->batch(),
+            'batch' => $batch,
+            'items' => $batch->items()->orderBy('id')->get(),
             'uploadLimit' => UploadLimits::bytes(),
         ])->layout('layouts.chat', ['title' => 'Penilaian']);
     }

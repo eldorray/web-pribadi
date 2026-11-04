@@ -25,4 +25,15 @@
         <p class="chat-grading__status" data-grading-progress role="status"></p>
         <ul class="chat-grading__messages" data-grading-messages></ul>
     </section>
+
+    <section class="chat-grading__results" aria-labelledby="results-heading">
+        <div class="chat-grading__results-head">
+            <h2 id="results-heading" class="chat-grading__heading">Tugas ({{ $items->count() }})</h2>
+            @if ($items->contains('status', \App\Models\GradingItem::QUEUED))
+                <button type="button" class="chat-grading__primary" data-grading-run>Mulai menilai</button>
+            @endif
+        </div>
+
+        @include('livewire.chat.grading.partials.table')
+    </section>
 </div>

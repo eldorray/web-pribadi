@@ -75,7 +75,52 @@ async function uploadFiles(queue, files) {
     }
 
     setProgress(queue, '');
+    gradeQueued(queue);
 }
+
+/**
+ * Grade until nothing is queued. The next item is read from the page after each
+ * refresh, so items that failed fall out on their own and the loop moves on.
+ * Items that answered 409 are remembered, or a stuck one would loop forever.
+ */
+async function gradeQueued(queue) {
+    if (queue.dataset.running === '1') return;
+    queue.dataset.running = '1';
+
+    const attempted = new Set();
+
+    try {
+        for (;;) {
+            const next = Array.from(document.querySelectorAll('[data-grade-url]'))
+                .find((row) => !attempted.has(row.dataset.gradeUrl));
+
+            if (!next) break;
+
+            attempted.add(next.dataset.gradeUrl);
+            setProgress(queue, `Menilai ${next.dataset.studentName ?? ''}…`);
+
+            try {
+                await postForm(next.dataset.gradeUrl, new FormData());
+            } catch (error) {
+                if (!error.message.includes('409')) {
+                    report(queue, `${next.dataset.studentName ?? ''}: ${error.message}`);
+                }
+            }
+
+            await refreshPage(queue);
+        }
+    } finally {
+        delete queue.dataset.running;
+        setProgress(queue, '');
+    }
+}
+
+document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('[data-grading-run]')) return;
+
+    const queue = document.querySelector('[data-grading-queue]');
+    if (queue) gradeQueued(queue);
+});
 
 document.addEventListener('change', (event) => {
     const input = event.target;
