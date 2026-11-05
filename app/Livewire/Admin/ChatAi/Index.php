@@ -168,7 +168,19 @@ class Index extends Component
             return;
         }
 
-        $model->update([$field => (bool) $value]);
+        $changes = [$field => (bool) $value];
+
+        // Chat, image and transcription are kinds of model, not features: a
+        // model is one of them, and it leaves its default behind when it moves.
+        if ($field === 'is_image' || $field === 'is_transcribe') {
+            $changes['is_default'] = false;
+
+            if ((bool) $value) {
+                $changes[$field === 'is_image' ? 'is_transcribe' : 'is_image'] = false;
+            }
+        }
+
+        $model->update($changes);
 
         // Exactly one default per kind keeps the chat page predictable.
         if ($field === 'is_default' && (bool) $value) {
@@ -239,8 +251,9 @@ class Index extends Component
     public function render()
     {
         return view('livewire.admin.chat-ai.index', [
-            'chatModels' => AiModel::where('is_image', false)->orderBy('label')->get(),
+            'chatModels' => AiModel::where('is_image', false)->where('is_transcribe', false)->orderBy('label')->get(),
             'imageModels' => AiModel::where('is_image', true)->orderBy('label')->get(),
+            'transcribeModels' => AiModel::where('is_image', false)->where('is_transcribe', true)->orderBy('label')->get(),
             'chatUsers' => ChatUser::orderBy('name')->get(),
             'hasApiKey' => AiClient::hasApiKey(),
         ])->layout('layouts.admin', ['pageTitle' => 'Chat AI']);

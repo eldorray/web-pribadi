@@ -96,11 +96,12 @@
             <div>
                 <h2 class="text-lg font-bold" style="color: var(--color-ink);">Model</h2>
                 <p class="text-sm mt-1" style="color: var(--color-ink-4);">Hanya model yang dicentang
-                    <strong>Aktif</strong> yang muncul di halaman chat.</p>
+                    <strong>Aktif</strong> yang bisa dipakai. Satu model hanya untuk satu jenis, sesuai tabelnya.</p>
                 <p class="text-xs mt-2 leading-relaxed" style="color: var(--color-ink-5);">
-                    <strong>Baca gambar</strong> = model bisa menerima lampiran gambar.
-                    <strong>Buat gambar</strong> = model generator gambar — model ini <em>tidak</em> muncul di
-                    pilihan chat, hanya di mode "Gambar". Jangan centang keduanya untuk model chat biasa. <strong>Transkripsi</strong> = model pengubah suara menjadi teks untuk Penilaian video; model ini tidak muncul di pilihan chat.
+                    <strong>Baca gambar</strong> = model chat bisa menerima lampiran gambar.
+                    <strong>Buat gambar</strong> memindahkan model ke tabel Model gambar, untuk mode "Gambar".
+                    <strong>Transkripsi</strong> memindahkan model ke tabel Model transkripsi, yaitu model pengubah suara menjadi teks
+                    untuk Penilaian video. Model di kedua tabel itu tidak muncul di pilihan chat.
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -130,13 +131,16 @@
             <p class="text-sm mb-4" style="color: var(--color-ink-3);">{{ $modelsMessage }}</p>
         @endif
 
-        @foreach ([['judul' => 'Model chat', 'rows' => $chatModels], ['judul' => 'Model gambar', 'rows' => $imageModels]] as $group)
+        @foreach ([
+            ['judul' => 'Model chat', 'rows' => $chatModels, 'kosong' => 'Belum ada. Klik "Ambil model" atau tambah manual.'],
+            ['judul' => 'Model gambar', 'rows' => $imageModels, 'kosong' => 'Belum ada. Centang Buat gambar pada model pembuat gambar.'],
+            ['judul' => 'Model transkripsi', 'rows' => $transcribeModels, 'kosong' => 'Belum ada. Centang Transkripsi pada model pengubah suara, biasanya bernama "transcribe".'],
+        ] as $group)
             <h3 class="text-xs font-semibold uppercase tracking-widest mt-4 mb-2" style="color: var(--color-ink-5);">
                 {{ $group['judul'] }}</h3>
 
             @if ($group['rows']->isEmpty())
-                <p class="text-sm mb-4" style="color: var(--color-ink-5);">Belum ada. Klik "Ambil model" atau tambah
-                    manual.</p>
+                <p class="text-sm mb-4" style="color: var(--color-ink-5);">{{ $group['kosong'] }}</p>
             @else
                 <div class="overflow-x-auto -mx-2 px-2 mb-2">
                     <table class="w-full min-w-[640px]">

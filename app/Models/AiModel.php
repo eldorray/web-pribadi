@@ -47,7 +47,7 @@ class AiModel extends Model
     /** @param  Builder<AiModel>  $query */
     public function scopeTranscribe(Builder $query): void
     {
-        $query->where('is_enabled', true)->where('is_transcribe', true);
+        $query->where('is_enabled', true)->where('is_image', false)->where('is_transcribe', true);
     }
 
     public static function defaultChat(): ?self

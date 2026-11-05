@@ -128,6 +128,67 @@ class AdminChatAiTest extends TestCase
     }
 
     #[Test]
+    public function each_model_is_listed_once_under_its_kind(): void
+    {
+        // A transcription model used to stay in the chat table with "Aktif"
+        // ticked, while the chat picker silently left it out.
+        AiModel::create(['model_id' => 'chat', 'label' => 'Chat']);
+        AiModel::create(['model_id' => 'img', 'label' => 'Img', 'is_image' => true]);
+        AiModel::create(['model_id' => 'voice', 'label' => 'Voice', 'is_transcribe' => true]);
+        AiModel::create(['model_id' => 'both', 'label' => 'Both', 'is_image' => true, 'is_transcribe' => true]);
+
+        $page = Livewire::actingAs(User::factory()->create())->test(Index::class);
+
+        $this->assertSame(['chat'], $page->viewData('chatModels')->pluck('model_id')->all());
+        $this->assertSame(['both', 'img'], $page->viewData('imageModels')->pluck('model_id')->all());
+        $this->assertSame(['voice'], $page->viewData('transcribeModels')->pluck('model_id')->all());
+        $page->assertSee('Model transkripsi');
+    }
+
+    #[Test]
+    public function a_model_is_only_one_kind_at_a_time(): void
+    {
+        $voice = AiModel::create(['model_id' => 'voice', 'label' => 'Voice', 'is_transcribe' => true]);
+        $image = AiModel::create(['model_id' => 'img', 'label' => 'Img', 'is_image' => true]);
+
+        Livewire::actingAs(User::factory()->create())
+            ->test(Index::class)
+            ->call('updateModel', $voice->id, 'is_image', true)
+            ->call('updateModel', $image->id, 'is_transcribe', true);
+
+        $this->assertTrue($voice->fresh()->is_image);
+        $this->assertFalse($voice->fresh()->is_transcribe);
+        $this->assertTrue($image->fresh()->is_transcribe);
+        $this->assertFalse($image->fresh()->is_image);
+    }
+
+    #[Test]
+    public function changing_kind_does_not_carry_the_default_along(): void
+    {
+        $chat = AiModel::create(['model_id' => 'chat', 'label' => 'Chat', 'is_default' => true]);
+        $voice = AiModel::create(['model_id' => 'voice', 'label' => 'Voice', 'is_transcribe' => true, 'is_default' => true]);
+
+        Livewire::actingAs(User::factory()->create())
+            ->test(Index::class)
+            ->call('updateModel', $chat->id, 'is_transcribe', true);
+
+        $this->assertFalse($chat->fresh()->is_default);
+        $this->assertTrue($voice->fresh()->is_default);
+    }
+
+    #[Test]
+    public function image_model_with_a_stray_transcribe_flag_is_not_used_for_audio(): void
+    {
+        AiModel::create(['model_id' => 'both', 'label' => 'Both', 'is_enabled' => true, 'is_image' => true, 'is_transcribe' => true]);
+
+        $this->assertNull(AiModel::defaultTranscribe());
+
+        AiModel::create(['model_id' => 'voice', 'label' => 'Voice', 'is_enabled' => true, 'is_transcribe' => true]);
+
+        $this->assertSame('voice', AiModel::defaultTranscribe()?->model_id);
+    }
+
+    #[Test]
     public function add_user_hashes_pin(): void
     {
         Livewire::actingAs(User::factory()->create())
