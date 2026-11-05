@@ -218,6 +218,12 @@ class BatchPage extends Component
     {
         $item = $this->ownedItem($id);
 
+        // The running request would come back to a missing row. It clears within
+        // STALE_MINUTES at worst, so a stuck task never stays undeletable.
+        if ($item->status === GradingItem::PROCESSING) {
+            return;
+        }
+
         GradingFiles::deleteForItem($item);
         $item->delete();
 

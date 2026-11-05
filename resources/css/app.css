@@ -3375,6 +3375,53 @@ a, button { -webkit-tap-highlight-color: transparent; }
     cursor: not-allowed;
 }
 
+/* Stays on the right even when a narrow row wraps it onto its own line. */
+.chat-grading__row > .chat-icon-btn { margin-left: auto; }
+
+.chat-grading__danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 40px;
+    padding: 0 1rem;
+    border-radius: 10px;
+    background: var(--color-error);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Preflight zeroes every margin, which would pin a dialog to the top left. */
+.chat-grading__dialog {
+    width: min(26rem, calc(100vw - 2rem));
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+    background: var(--color-card);
+    color: var(--color-ink);
+}
+
+.chat-grading__dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+
+.chat-grading__dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+.chat-grading__dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
 .chat-grading__note-tools {
     display: flex;
     flex-wrap: wrap;

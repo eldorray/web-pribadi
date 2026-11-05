@@ -764,6 +764,65 @@ class GradingReviewTest extends TestCase
     }
 
     #[Test]
+    public function every_task_has_a_delete_button_behind_one_confirmation_dialog(): void
+    {
+        $this->item(['student_name' => 'Budi']);
+        $this->item(['student_name' => 'Citra']);
+
+        $this->page()
+            ->assertSeeHtml('aria-label="Hapus tugas Budi"')
+            ->assertSeeHtml('aria-label="Hapus tugas Citra"')
+            ->assertSeeHtml('<dialog');
+    }
+
+    #[Test]
+    public function the_detail_panel_uses_the_same_dialog_instead_of_a_browser_prompt(): void
+    {
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->assertSee('Hapus tugas')
+            ->assertDontSeeHtml('wire:confirm="Hapus tugas');
+    }
+
+    #[Test]
+    public function a_student_name_reaches_the_dialog_only_as_escaped_data(): void
+    {
+        // Names come from file names, so they are not to be trusted as markup or script.
+        $this->item(['student_name' => '<img src=x onerror=alert(1)>']);
+
+        $this->page()
+            ->assertSeeHtml('data-name="&lt;img src=x onerror=alert(1)&gt;"')
+            ->assertDontSeeHtml('<img src=x');
+    }
+
+    #[Test]
+    public function a_task_being_graded_cannot_be_deleted(): void
+    {
+        // The running request would come back to a missing row and report a bare 404.
+        $item = $this->item(['status' => GradingItem::PROCESSING, 'files' => [['path' => 'grading/1/a.png', 'name' => 'a.png', 'mime' => 'image/png']]]);
+        Storage::disk('local')->put('grading/1/a.png', 'x');
+
+        $this->page()
+            ->assertSeeHtml('title="Tunggu sampai AI selesai menilai"')
+            ->call('deleteItem', $item->id);
+
+        $this->assertNotNull($item->fresh());
+        Storage::disk('local')->assertExists('grading/1/a.png');
+    }
+
+    #[Test]
+    public function a_queued_task_can_still_be_deleted(): void
+    {
+        $item = $this->item(['status' => GradingItem::QUEUED]);
+
+        $this->page()->call('deleteItem', $item->id);
+
+        $this->assertNull($item->fresh());
+    }
+
+    #[Test]
     public function removing_an_image_from_another_users_submission_is_404(): void
     {
         $other = ChatUser::create(['name' => 'Rina', 'pin' => Hash::make('654321')]);

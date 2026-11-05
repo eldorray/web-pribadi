@@ -43,6 +43,14 @@
                 <span class="chat-grading__badge {{ in_array($item->status, ['preparing', 'processing'], true) ? 'is-busy' : '' }}">{{ $statusLabels[$item->status] ?? $item->status }}</span>
             </span>
 
+            <button type="button" class="chat-icon-btn {{ $item->status === 'processing' ? 'is-disabled' : '' }}"
+                aria-label="Hapus tugas {{ $item->student_name }}"
+                title="{{ $item->status === 'processing' ? 'Tunggu sampai AI selesai menilai' : 'Hapus tugas' }}"
+                data-id="{{ $item->id }}" data-name="{{ $item->student_name }}" x-on:click="askDelete($el)"
+                wire:loading.attr="disabled" wire:target="deleteItem" @disabled($item->status === 'processing')>
+                <x-icon name="delete" :size="16" />
+            </button>
+
             @if ($item->error)
                 <small class="chat-grading__error chat-grading__row-note">{{ $item->error }}</small>
             @elseif ($item->status === 'preparing')

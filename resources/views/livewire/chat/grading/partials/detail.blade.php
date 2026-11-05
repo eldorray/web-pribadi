@@ -198,8 +198,8 @@
                     <span wire:loading wire:target="regrade">Memulai…</span>
                 </button>
             @endif
-            <button type="button" class="chat-grading__link" wire:click="deleteItem({{ $item->id }})"
-                wire:confirm="Hapus tugas {{ $item->student_name }} beserta nilainya?">Hapus tugas</button>
+            <button type="button" class="chat-grading__link" data-id="{{ $item->id }}" data-name="{{ $item->student_name }}"
+                x-on:click="askDelete($el)" @disabled($item->status === 'processing')>Hapus tugas</button>
         </div>
     </form>
 </section>

@@ -1,4 +1,10 @@
-<div class="chat-grading">
+<div class="chat-grading" x-data="{
+    deleting: null,
+    askDelete(button) {
+        this.deleting = { id: Number(button.dataset.id), name: button.dataset.name };
+        this.$refs.deleteDialog.showModal();
+    },
+}">
     {{-- One grading is one long request, so the row only changes if the page asks again. --}}
     @if ($grading)
         <div hidden wire:poll.5s wire:key="grading-poll"></div>
@@ -59,4 +65,20 @@
             @include('livewire.chat.grading.partials.detail', ['item' => $open])
         @endif
     </div>
+
+    <dialog class="chat-grading__dialog" x-ref="deleteDialog" aria-labelledby="delete-dialog-title"
+        x-on:click.self="$el.close()" wire:ignore>
+        <div class="chat-grading__dialog-body">
+            <h2 id="delete-dialog-title" class="chat-grading__heading">Hapus tugas?</h2>
+            <p>Tugas <strong x-text="deleting?.name"></strong> beserta file dan nilainya akan dihapus permanen, dan tidak bisa dikembalikan.</p>
+            <div class="chat-grading__dialog-actions">
+                <button type="button" class="chat-grading__secondary" autofocus x-on:click="$refs.deleteDialog.close()">Batal</button>
+                <button type="button" class="chat-grading__danger"
+                    x-on:click="$refs.deleteDialog.close(); $wire.deleteItem(deleting.id)">
+                    <x-icon name="delete" :size="16" />
+                    Hapus
+                </button>
+            </div>
+        </div>
+    </dialog>
 </div>
