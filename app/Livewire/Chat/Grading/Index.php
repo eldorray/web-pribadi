@@ -51,6 +51,15 @@ class Index extends Component
 
     public ?string $batchModel = null;
 
+    #[Locked]
+    public ?int $editingBatchId = null;
+
+    public string $editBatchName = '';
+
+    public ?string $editBatchModel = null;
+
+    public ?int $editBatchRubricId = null;
+
     public function mount(): void
     {
         $this->batchModel = AiModel::defaultChat()?->model_id;
@@ -210,14 +219,62 @@ class Index extends Component
         $batch = $this->chatUser()->gradingBatches()->create([
             'name' => trim($this->batchName),
             'model' => $this->batchModel,
-            'rubric_snapshot' => [
-                'name' => $rubric->name,
-                'guidance' => (string) $rubric->guidance,
-                'criteria' => $rubric->criteria,
-            ],
+            'rubric_snapshot' => $this->snapshotOf($rubric),
         ]);
 
         $this->redirect(route('chat.grading.batch', $batch), navigate: true);
+    }
+
+    public function openBatchEdit(int $id): void
+    {
+        $batch = $this->ownedBatch($id);
+
+        $this->editingBatchId = $batch->id;
+        $this->editBatchName = $batch->name;
+        $this->editBatchModel = $batch->model;
+        $this->editBatchRubricId = null;
+        $this->resetErrorBag();
+    }
+
+    public function closeBatchEdit(): void
+    {
+        $this->editingBatchId = null;
+        $this->resetErrorBag();
+    }
+
+    public function saveBatch(): void
+    {
+        $batch = $this->ownedBatch((int) $this->editingBatchId);
+
+        $this->validate([
+            'editBatchName' => ['required', 'string', 'max:120'],
+            'editBatchModel' => ['required', Rule::in(AiModel::chat()->pluck('model_id')->all())],
+            'editBatchRubricId' => ['nullable', 'integer'],
+        ], [
+            'editBatchName.required' => 'Nama sesi wajib diisi.',
+            'editBatchModel.required' => 'Pilih model AI dulu.',
+            'editBatchModel.in' => 'Model ini tidak tersedia. Pilih model yang aktif.',
+        ]);
+
+        $attributes = ['name' => trim($this->editBatchName), 'model' => $this->editBatchModel];
+
+        if ($this->editBatchRubricId !== null) {
+            $rubric = $this->ownedRubric($this->editBatchRubricId);
+
+            // Scores are stored by criterion position, so a new rubric would pin
+            // old numbers onto different criteria.
+            if ($batch->items()->exists()) {
+                $this->addError('editBatchRubricId', 'Rubrik tidak bisa diganti karena sesi ini sudah berisi tugas.');
+
+                return;
+            }
+
+            $attributes['rubric_snapshot'] = $this->snapshotOf($rubric);
+        }
+
+        $batch->update($attributes);
+
+        $this->closeBatchEdit();
     }
 
     public function deleteBatch(int $id): void
@@ -226,6 +283,10 @@ class Index extends Component
 
         GradingFiles::deleteForBatch($batch);
         $batch->delete();
+
+        if ($this->editingBatchId === $id) {
+            $this->closeBatchEdit();
+        }
     }
 
     public function render()
@@ -233,11 +294,22 @@ class Index extends Component
         $chatUser = $this->chatUser();
 
         return view('livewire.chat.grading.index', [
+            'editingBatchHasItems' => $this->editingBatchId !== null && $this->ownedBatch($this->editingBatchId)->items()->exists(),
             'chatUser' => $chatUser,
             'rubrics' => $chatUser->rubrics()->orderBy('name')->get(),
             'batches' => $chatUser->gradingBatches()->withCount('items')->latest('id')->get(),
             'models' => AiModel::chat()->orderByDesc('is_default')->orderBy('label')->get(),
         ])->layout('layouts.chat', ['title' => 'Penilaian']);
+    }
+
+    /** @return array{name: string, guidance: string, criteria: mixed} */
+    private function snapshotOf(GradingRubric $rubric): array
+    {
+        return [
+            'name' => $rubric->name,
+            'guidance' => (string) $rubric->guidance,
+            'criteria' => $rubric->criteria,
+        ];
     }
 
     private function draftFrom(string $source, string $errorField): void

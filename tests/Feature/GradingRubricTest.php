@@ -470,4 +470,154 @@ class GradingRubricTest extends TestCase
         $this->assertArrayNotHasKey('weight', GradingRubric::firstOrFail()->criteria[0]);
         $this->assertArrayNotHasKey('min_score', GradingRubric::firstOrFail()->criteria[0]);
     }
+
+    private function editing(GradingBatch $batch): Testable
+    {
+        return $this->page()->call('openBatchEdit', $batch->id);
+    }
+
+    #[Test]
+    public function a_session_shows_an_edit_button_and_opens_with_its_current_values(): void
+    {
+        $batch = $this->batch();
+
+        $this->page()
+            ->assertSeeHtml('aria-label="Ubah sesi '.$batch->name.'"')
+            ->assertDontSeeHtml('<dialog')
+            ->call('openBatchEdit', $batch->id)
+            ->assertSeeHtml('<dialog')
+            ->assertSet('editBatchName', $batch->name)
+            ->assertSet('editBatchModel', $batch->model);
+    }
+
+    #[Test]
+    public function saving_changes_the_name_and_model_and_closes_the_dialog(): void
+    {
+        AiModel::create(['model_id' => 'chat-pro', 'label' => 'Pro', 'is_enabled' => true]);
+        $batch = $this->batch();
+
+        $this->editing($batch)
+            ->set('editBatchName', '  UTS Pronunciation  ')
+            ->set('editBatchModel', 'chat-pro')
+            ->call('saveBatch')
+            ->assertHasNoErrors()
+            ->assertSet('editingBatchId', null);
+
+        $batch->refresh();
+
+        $this->assertSame('UTS Pronunciation', $batch->name);
+        $this->assertSame('chat-pro', $batch->model);
+    }
+
+    #[Test]
+    public function changing_the_model_leaves_existing_grades_alone(): void
+    {
+        AiModel::create(['model_id' => 'chat-pro', 'label' => 'Pro', 'is_enabled' => true]);
+        $batch = $this->batch();
+        $item = $batch->items()->create([
+            'student_name' => 'Budi', 'type' => 'document', 'original_name' => 'b.docx', 'status' => GradingItem::APPROVED,
+            'extracted_text' => 'Isi', 'final_scores' => [30], 'approved_at' => now(),
+        ]);
+
+        $this->editing($batch)->set('editBatchModel', 'chat-pro')->call('saveBatch')->assertHasNoErrors();
+
+        $item->refresh();
+
+        $this->assertSame(GradingItem::APPROVED, $item->status);
+        $this->assertEquals([30], $item->final_scores);
+    }
+
+    #[Test]
+    public function an_invalid_edit_keeps_the_dialog_open_and_changes_nothing(): void
+    {
+        $batch = $this->batch();
+
+        $this->editing($batch)
+            ->set('editBatchName', '   ')
+            ->call('saveBatch')
+            ->assertHasErrors('editBatchName')
+            ->assertSet('editingBatchId', $batch->id);
+
+        $this->editing($batch)
+            ->set('editBatchModel', 'model-tidak-aktif')
+            ->call('saveBatch')
+            ->assertHasErrors('editBatchModel');
+
+        $this->assertSame($batch->name, $batch->fresh()->name);
+    }
+
+    #[Test]
+    public function an_empty_session_can_take_another_rubric(): void
+    {
+        $batch = $this->batch();
+        $other = $this->rubric();
+        $other->update(['name' => 'Rubrik Baru']);
+
+        $this->editing($batch)
+            ->assertSee('Ganti rubrik')
+            ->set('editBatchRubricId', $other->id)
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Rubrik Baru', $batch->fresh()->rubric_snapshot['name']);
+    }
+
+    #[Test]
+    public function leaving_the_rubric_choice_empty_keeps_the_rubric(): void
+    {
+        $batch = $this->batch();
+        $before = $batch->rubric_snapshot;
+
+        $this->editing($batch)->set('editBatchName', 'Nama baru')->call('saveBatch')->assertHasNoErrors();
+
+        $this->assertEquals($before, $batch->fresh()->rubric_snapshot);
+    }
+
+    #[Test]
+    public function a_session_with_tasks_keeps_its_rubric(): void
+    {
+        // Scores are stored by criterion position, so a new rubric would pin old
+        // numbers onto different criteria.
+        $batch = $this->batch();
+        $before = $batch->rubric_snapshot;
+        $batch->items()->create(['student_name' => 'Budi', 'type' => 'document', 'original_name' => 'b.docx', 'status' => GradingItem::READY]);
+
+        $this->editing($batch)
+            ->assertDontSee('Ganti rubrik')
+            ->assertSee('sudah ada tugas')
+            ->set('editBatchName', 'Nama baru')
+            ->set('editBatchRubricId', $this->rubric()->id)
+            ->call('saveBatch')
+            ->assertHasErrors('editBatchRubricId');
+
+        $batch->refresh();
+
+        $this->assertEquals($before, $batch->rubric_snapshot);
+        $this->assertNotSame('Nama baru', $batch->name);
+    }
+
+    #[Test]
+    public function another_users_session_or_rubric_is_404(): void
+    {
+        $foreignBatch = $this->batch($this->other);
+        $foreignRubric = $this->rubric($this->other);
+        $mine = $this->batch();
+
+        $this->assertThrows(fn () => $this->page()->call('openBatchEdit', $foreignBatch->id), ModelNotFoundException::class);
+        $this->assertThrows(fn () => $this->editing($mine)->set('editBatchRubricId', $foreignRubric->id)->call('saveBatch'), ModelNotFoundException::class);
+    }
+
+    #[Test]
+    public function closing_the_dialog_discards_the_edit(): void
+    {
+        $batch = $this->batch();
+
+        $this->editing($batch)
+            ->set('editBatchName', 'Tidak jadi')
+            ->call('closeBatchEdit')
+            ->assertSet('editingBatchId', null)
+            ->assertDontSeeHtml('<dialog');
+
+        $this->assertNotSame('Tidak jadi', $batch->fresh()->name);
+    }
 }

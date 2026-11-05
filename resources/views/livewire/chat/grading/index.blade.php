@@ -59,6 +59,11 @@
                             <strong>{{ $batch->name }}</strong>
                             <small>{{ $batch->rubric_snapshot['name'] ?? '' }} · {{ $batch->items_count }} tugas</small>
                         </a>
+                        <button type="button" class="chat-icon-btn" wire:click="openBatchEdit({{ $batch->id }})"
+                            wire:loading.attr="disabled" wire:target="openBatchEdit"
+                            aria-label="Ubah sesi {{ $batch->name }}" title="Ubah sesi">
+                            <x-icon name="edit" :size="16" />
+                        </button>
                         <button type="button" class="chat-icon-btn" wire:click="deleteBatch({{ $batch->id }})"
                             wire:confirm="Hapus sesi {{ $batch->name }} beserta semua file dan nilainya?"
                             aria-label="Hapus sesi {{ $batch->name }}" title="Hapus sesi">
@@ -200,4 +205,51 @@
             </form>
         </section>
     </div>
+
+    @if ($editingBatchId)
+        {{-- Livewire would strip the open attribute on re-render; .self keeps it while errors update. --}}
+        <dialog class="chat-grading__dialog" aria-labelledby="batch-dialog-title" wire:key="batch-dialog-{{ $editingBatchId }}" wire:ignore.self
+            x-init="$el.showModal()" x-on:close="$wire.closeBatchEdit()">
+            <form wire:submit="saveBatch" class="chat-grading__dialog-body">
+                <h2 id="batch-dialog-title" class="chat-grading__heading">Ubah sesi</h2>
+
+                <label class="chat-grading__field">
+                    <span>Nama sesi</span>
+                    <input type="text" wire:model="editBatchName" maxlength="120" autofocus />
+                    @error('editBatchName') <small class="chat-grading__error">{{ $message }}</small> @enderror
+                </label>
+
+                <label class="chat-grading__field">
+                    <span>Model AI</span>
+                    <select wire:model="editBatchModel">
+                        @foreach ($models as $model)
+                            <option value="{{ $model->model_id }}" wire:key="edit-model-{{ $model->id }}">{{ $model->label }}{{ $model->supports_vision ? '' : ' (tanpa baca gambar)' }}</option>
+                        @endforeach
+                    </select>
+                    <small>Berlaku untuk penilaian berikutnya. Nilai yang sudah ada tidak berubah.</small>
+                    @error('editBatchModel') <small class="chat-grading__error">{{ $message }}</small> @enderror
+                </label>
+
+                @if ($editingBatchHasItems)
+                    <p class="chat-grading__meta">Rubrik tidak bisa diganti karena sesi ini sudah ada tugas: skor yang tersimpan mengikuti kriteria rubrik saat ini.</p>
+                @else
+                    <label class="chat-grading__field">
+                        <span>Ganti rubrik (opsional)</span>
+                        <select wire:model="editBatchRubricId">
+                            <option value="">Tetap memakai rubrik sekarang</option>
+                            @foreach ($rubrics as $rubric)
+                                <option value="{{ $rubric->id }}" wire:key="edit-rubric-{{ $rubric->id }}">{{ $rubric->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                @endif
+                @error('editBatchRubricId') <small class="chat-grading__error">{{ $message }}</small> @enderror
+
+                <div class="chat-grading__dialog-actions">
+                    <button type="button" class="chat-grading__secondary" wire:click="closeBatchEdit">Batal</button>
+                    <button type="submit" class="chat-grading__primary">Simpan</button>
+                </div>
+            </form>
+        </dialog>
+    @endif
 </div>
