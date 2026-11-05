@@ -315,10 +315,22 @@ class Page extends Component
             // it drift, so a chat model rewrites it first when one is available.
             // The selected canvas is part of planning, not merely a render hint.
             $planner = AiModel::defaultChat();
-            $prompt = ($planner !== null ? $client->planImagePrompt($request, $planner->model_id, $ratio) : null) ?? $request;
+            $previous = $this->lastGeneratedImage($conversation);
+            $editing = false;
+
+            if ($previous !== null) {
+                $plan = $planner !== null ? $client->planImageEdit($request, (string) $previous->content, $planner->model_id, $ratio) : null;
+                $editing = $plan['edit'] ?? true;
+                $prompt = $plan['prompt'] ?? trim((string) $previous->content)."\n\nPerubahan: {$request}";
+                $ratio ??= $editing ? $previous->image_used_ratio : null;
+            } else {
+                $prompt = ($planner !== null ? $client->planImagePrompt($request, $planner->model_id, $ratio) : null) ?? $request;
+            }
 
             try {
-                $result = $client->generateImageResult($model->model_id, $prompt, $ratio);
+                $result = $editing
+                    ? $client->editImageResult($model->model_id, $prompt, (string) Storage::disk('local')->get($previous->image_path), $ratio)
+                    : $client->generateImageResult($model->model_id, $prompt, $ratio);
             } catch (AiException $e) {
                 $this->storeError($conversation, $e->getMessage());
 
@@ -343,6 +355,7 @@ class Page extends Component
                 'image_requested_ratio' => $result['requested_ratio'],
                 'image_used_ratio' => $result['used_ratio'],
                 'image_fell_back' => $result['fell_back'],
+                'image_edit' => $editing ? (($result['edited'] ?? false) ? 'edited' : 'redrawn') : null,
             ]);
             $conversation->touch();
 
@@ -390,6 +403,14 @@ class Page extends Component
         ]);
 
         $conversation->touch();
+    }
+
+    /** The picture a follow-up request would change, if its file still exists. */
+    private function lastGeneratedImage(ChatConversation $conversation): ?ChatMessage
+    {
+        $message = $conversation->messages()->whereNotNull('image_path')->reorder('id', 'desc')->first();
+
+        return $message !== null && Storage::disk('local')->exists($message->image_path) ? $message : null;
     }
 
     /**

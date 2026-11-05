@@ -20,6 +20,7 @@ class ChatMessage extends Model
         'image_requested_ratio',
         'image_used_ratio',
         'image_fell_back',
+        'image_edit',
         'attachments',
         'is_error',
         'is_truncated',

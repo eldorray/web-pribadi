@@ -30,6 +30,12 @@ class AiClient
     /** Request timeout in seconds; a long answer can legitimately take a while. */
     private const TIMEOUT = 120;
 
+    /** Statuses meaning this provider or model has no image editing, unlike 401 or a server error. */
+    private const EDIT_UNSUPPORTED = [400, 404, 405, 415, 422, 501];
+
+    /** Statuses a provider uses to refuse multipart where it expects JSON. */
+    private const FORMAT_REFUSED = [400, 415, 422];
+
     private const CONNECT_TIMEOUT = 10;
 
     /** Provider word timings are grouped into lines of this many seconds. */
@@ -203,13 +209,44 @@ class AiClient
      */
     public function generateImageResult(string $model, string $prompt, ?string $aspectRatio = null): array
     {
+        return $this->renderImage(fn (?string $ratio): string => self::imageMode() === 'chat'
+            ? $this->imageViaChat($model, $prompt)
+            : $this->imageViaImagesEndpoint($model, $prompt, $ratio), $aspectRatio);
+    }
+
+    /**
+     * Change an existing picture. A provider without an edit endpoint redraws
+     * from the prompt instead, and `edited` is false so the page can say so:
+     * that picture can differ, and pretending otherwise would hide why.
+     *
+     * @return array{bytes: string, requested_ratio: ?string, used_ratio: ?string, fell_back: bool, edited: bool}
+     */
+    public function editImageResult(string $model, string $prompt, string $image, ?string $aspectRatio = null): array
+    {
+        try {
+            return $this->renderImage(fn (?string $ratio): string => self::imageMode() === 'chat'
+                ? $this->imageViaChat($model, $prompt, $image)
+                : $this->imageViaEdits($model, $prompt, $image, $ratio), $aspectRatio) + ['edited' => true];
+        } catch (AiException $e) {
+            if (! in_array($e->getCode(), self::EDIT_UNSUPPORTED, true)) {
+                throw $e;
+            }
+        }
+
+        return $this->generateImageResult($model, $prompt, $aspectRatio) + ['edited' => false];
+    }
+
+    /**
+     * @param  callable(?string): string  $render
+     * @return array{bytes: string, requested_ratio: ?string, used_ratio: ?string, fell_back: bool}
+     */
+    private function renderImage(callable $render, ?string $aspectRatio): array
+    {
         $fellBack = false;
         $usedRatio = $aspectRatio;
 
         try {
-            $bytes = self::imageMode() === 'chat'
-                ? $this->imageViaChat($model, $prompt)
-                : $this->imageViaImagesEndpoint($model, $prompt, $aspectRatio);
+            $bytes = $render($aspectRatio);
         } catch (AiException $e) {
             if ($aspectRatio === null || ! str_contains($e->getMessage(), 'unsupported_image_controls')) {
                 throw $e;
@@ -217,9 +254,7 @@ class AiClient
 
             $fellBack = true;
             $usedRatio = null;
-            $bytes = self::imageMode() === 'chat'
-                ? $this->imageViaChat($model, $prompt)
-                : $this->imageViaImagesEndpoint($model, $prompt, null);
+            $bytes = $render(null);
         }
 
         if ($bytes === '') {
@@ -282,6 +317,57 @@ class AiClient
         $planned = trim($result['content']);
 
         return $planned === '' ? null : Str::limit($planned, 1200, '');
+    }
+
+    /**
+     * Decide whether a message changes the previous image or asks for another,
+     * and write the prompt for it. The prompt repeats the whole description, so
+     * it still works when a provider can only redraw.
+     *
+     * Returns null when no usable plan came back; the caller then edits with the
+     * user's own words, because that is the likelier intent in an ongoing image.
+     *
+     * @return array{edit: bool, prompt: string}|null
+     */
+    public function planImageEdit(string $request, string $previousPrompt, string $model, ?string $aspectRatio = null): ?array
+    {
+        $ratioInstruction = $aspectRatio !== null ? "The final canvas MUST be {$aspectRatio}." : 'Keep the canvas of the previous image.';
+
+        try {
+            $result = $this->chat([
+                ['role' => 'system', 'content' => <<<TXT
+                    An image generator made a picture, described below as the previous image. Decide what the user's new message wants.
+                    Use "edit" when it changes that picture: a different colour, text, element, position or style. This is the usual case.
+                    Use "new" only when it clearly asks for a different picture about another subject.
+
+                    For "edit", write the prompt so that the requested change comes first, followed by the rest of the previous description unchanged, and end with: keep everything else exactly the same.
+                    For "new", describe subject, composition, layout, colours and style.
+                    Quote any text that must appear verbatim, in the user's own language.
+                    {$ratioInstruction}
+                    Never invent phone numbers, addresses, logos or academic years the user did not give.
+
+                    Reply with JSON only, no markdown:
+                    {"action": "edit", "prompt": "..."}
+                    TXT],
+                ['role' => 'user', 'content' => "Previous image:\n{$previousPrompt}\n\nUser's new message:\n{$request}"],
+            ], $model);
+        } catch (AiException) {
+            return null;
+        }
+
+        $content = $result['content'];
+        $start = strpos($content, '{');
+        $end = strrpos($content, '}');
+        $json = $start === false || $end === false ? null : json_decode(substr($content, $start, $end - $start + 1), true);
+
+        $action = $json['action'] ?? null;
+        $prompt = is_string($json['prompt'] ?? null) ? trim($json['prompt']) : '';
+
+        if (! in_array($action, ['edit', 'new'], true) || $prompt === '') {
+            return null;
+        }
+
+        return ['edit' => $action === 'edit', 'prompt' => Str::limit($prompt, 1200, '')];
     }
 
     /**
@@ -498,10 +584,55 @@ class AiClient
             $payload['aspect_ratio'] = $aspectRatio;
         }
 
-        $json = $this->decode($this->send(fn () => $this->request()
+        return $this->imageFromRows($this->decode($this->send(fn () => $this->request()
             ->withHeader('Idempotency-Key', (string) Str::uuid())
-            ->post('/images/generations', $payload)));
+            ->post('/images/generations', $payload))));
+    }
 
+    /**
+     * Gateways disagree here too: OpenAI takes a multipart file, xAI a JSON data
+     * URL. The file goes first, and a refusal of that format gets the other one.
+     */
+    private function imageViaEdits(string $model, string $prompt, string $image, ?string $aspectRatio): string
+    {
+        $fields = ['model' => $model, 'prompt' => $prompt];
+
+        if ($aspectRatio !== null && $aspectRatio !== '') {
+            $fields['aspect_ratio'] = $aspectRatio;
+        }
+
+        $mime = $this->imageMime($image);
+
+        try {
+            return $this->imageFromRows($this->decode($this->send(fn () => $this->connection()
+                ->attach('image', $image, 'image.'.substr($mime, 6), ['Content-Type' => $mime])
+                ->post('/images/edits', $fields))));
+        } catch (AiException $e) {
+            if (! in_array($e->getCode(), self::FORMAT_REFUSED, true) || str_contains($e->getMessage(), 'unsupported_image_controls')) {
+                throw $e;
+            }
+        }
+
+        return $this->imageFromRows($this->decode($this->send(fn () => $this->request()
+            ->post('/images/edits', $fields + ['image' => ['url' => $this->dataUrl($image)]]))));
+    }
+
+    /** Not from the file name: providers return JPEG or WebP under a .png path too. */
+    private function imageMime(string $image): string
+    {
+        $mime = @getimagesizefromstring($image)['mime'] ?? null;
+
+        return is_string($mime) ? $mime : 'image/png';
+    }
+
+    private function dataUrl(string $image): string
+    {
+        return 'data:'.$this->imageMime($image).';base64,'.base64_encode($image);
+    }
+
+    /** @param  array<string, mixed>  $json */
+    private function imageFromRows(array $json): string
+    {
         $row = $json['data'][0] ?? null;
 
         if (! is_array($row)) {
@@ -519,11 +650,16 @@ class AiClient
         throw new AiException('Penyedia tidak mengembalikan gambar.');
     }
 
-    private function imageViaChat(string $model, string $prompt): string
+    private function imageViaChat(string $model, string $prompt, ?string $image = null): string
     {
+        $content = $image === null ? $prompt : [
+            ['type' => 'text', 'text' => $prompt],
+            ['type' => 'image_url', 'image_url' => ['url' => $this->dataUrl($image)]],
+        ];
+
         $json = $this->decode($this->send(fn () => $this->request()->post('/chat/completions', [
             'model' => $model,
-            'messages' => [['role' => 'user', 'content' => $prompt]],
+            'messages' => [['role' => 'user', 'content' => $content]],
             'modalities' => ['image', 'text'],
         ])));
 

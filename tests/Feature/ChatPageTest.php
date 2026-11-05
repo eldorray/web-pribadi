@@ -66,11 +66,11 @@ class ChatPageTest extends TestCase
     }
 
     /** Bind the PIN user the way the ChatPin middleware does. */
-    private function chatPage(): Testable
+    private function chatPage(?int $conversationId = null): Testable
     {
         app()->instance('chatUser', $this->user);
 
-        return Livewire::test(Page::class);
+        return Livewire::test(Page::class, $conversationId === null ? [] : ['conversation' => ChatConversation::findOrFail($conversationId)]);
     }
 
     private function loggedInGet(string $uri)
@@ -835,5 +835,219 @@ class ChatPageTest extends TestCase
             ->assertOk()
             ->assertSee("addEventListener('livewire:navigating'", false)
             ->assertSee('onSwap', false);
+    }
+
+    /** Answers the planner per system prompt, and the first generation with FIRST-IMAGE. */
+    private function fakeImageEditing(string $plan, array $edits = []): void
+    {
+        Http::fake([
+            'ai.test/v1/chat/completions' => function (Request $request) use ($plan) {
+                $isEdit = str_contains((string) ($request->data()['messages'][0]['content'] ?? ''), 'previous image');
+
+                return Http::response(['choices' => [['message' => ['content' => $isEdit ? $plan : 'Flyer PPDB hijau, judul "PPDB 2027"']]]]);
+            },
+            'ai.test/v1/images/generations' => Http::sequence()
+                ->push(['data' => [['b64_json' => base64_encode('FIRST-IMAGE')]]])
+                ->push(['data' => [['b64_json' => base64_encode('REDRAWN-IMAGE')]]]),
+            'ai.test/v1/images/edits' => $edits === []
+                ? Http::response(['data' => [['b64_json' => base64_encode('EDITED-IMAGE')]]])
+                : Http::sequence($edits),
+        ]);
+    }
+
+    private function generateThenAsk(string $change, string $size = 'auto'): void
+    {
+        $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('imageSize', '4:5')
+            ->set('prompt', 'buatkan flyer ppdb')
+            ->call('send')
+            ->set('imageSize', $size)
+            ->set('prompt', $change)
+            ->call('send')
+            ->assertHasNoErrors();
+    }
+
+    private function lastImageMessage(): ChatMessage
+    {
+        return ChatMessage::where('role', 'assistant')->whereNotNull('image_path')->reorder('id', 'desc')->firstOrFail();
+    }
+
+    #[Test]
+    public function asking_for_a_change_sends_the_previous_image_to_the_provider(): void
+    {
+        // Each request used to be a new picture: "jadikan biru" reached the
+        // generator with no image and no context, so it came back unrelated.
+        $plan = json_encode(['action' => 'edit', 'prompt' => 'Ganti latar menjadi biru, sisanya tetap sama.']);
+        $this->fakeImageEditing($plan);
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/edits')
+            && $request->isMultipart()
+            && $request->hasFile('image', 'FIRST-IMAGE')
+            && collect($request->data())->firstWhere('name', 'prompt')['contents'] === 'Ganti latar menjadi biru, sisanya tetap sama.');
+
+        $message = $this->lastImageMessage();
+
+        $this->assertSame('edited', $message->image_edit);
+        $this->assertSame('EDITED-IMAGE', Storage::disk('local')->get($message->image_path));
+    }
+
+    #[Test]
+    public function the_planner_is_told_what_the_previous_image_shows(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'edit', 'prompt' => 'Ubah.']));
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        $bodies = $this->chatBodies();
+        $planner = end($bodies);
+
+        $this->assertStringContainsString('Flyer PPDB hijau, judul "PPDB 2027"', $planner['messages'][1]['content']);
+        $this->assertStringContainsString('jadikan latarnya biru', $planner['messages'][1]['content']);
+    }
+
+    #[Test]
+    public function an_edit_keeps_the_canvas_unless_another_size_is_chosen(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'edit', 'prompt' => 'Ubah.']));
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        $this->assertSame('4:5', $this->lastImageMessage()->image_requested_ratio);
+
+        $this->chatPage(ChatMessage::where('role', 'user')->value('chat_conversation_id'))
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('imageSize', '16:9')
+            ->set('prompt', 'ubah lagi')
+            ->call('send');
+
+        $this->assertSame('16:9', $this->lastImageMessage()->image_requested_ratio);
+    }
+
+    #[Test]
+    public function a_different_subject_in_the_same_chat_is_a_new_image(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'new', 'prompt' => 'Poster lomba sains']));
+
+        $this->generateThenAsk('sekarang buat poster lomba sains');
+
+        Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/edits'));
+
+        $message = $this->lastImageMessage();
+
+        $this->assertNull($message->image_edit);
+        $this->assertSame('Poster lomba sains', $message->content);
+    }
+
+    #[Test]
+    public function a_provider_without_an_edit_endpoint_redraws_and_says_so(): void
+    {
+        $this->fakeImageEditing(
+            json_encode(['action' => 'edit', 'prompt' => 'Flyer PPDB, latar biru']),
+            [Http::response(['error' => ['message' => 'not found']], 404)],
+        );
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        $message = $this->lastImageMessage();
+
+        $this->assertSame('redrawn', $message->image_edit);
+        $this->assertSame('REDRAWN-IMAGE', Storage::disk('local')->get($message->image_path));
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/generations')
+            && $request['prompt'] === 'Flyer PPDB, latar biru');
+
+        $this->chatPage($message->chat_conversation_id)->assertSee('bisa berbeda');
+    }
+
+    #[Test]
+    public function a_provider_wanting_json_edits_gets_the_image_as_a_data_url(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'edit', 'prompt' => 'Ubah.']), [
+            Http::response(['error' => ['message' => 'expected json']], 415),
+            Http::response(['data' => [['b64_json' => base64_encode('EDITED-IMAGE')]]]),
+        ]);
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/edits')
+            && ! $request->isMultipart()
+            && $request['image']['url'] === 'data:image/png;base64,'.base64_encode('FIRST-IMAGE'));
+
+        $this->assertSame('edited', $this->lastImageMessage()->image_edit);
+    }
+
+    #[Test]
+    public function a_wrong_api_key_is_reported_instead_of_silently_redrawing(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'edit', 'prompt' => 'Ubah.']), [Http::response(['error' => ['message' => 'bad key']], 401)]);
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        Http::assertSentCount(4);
+        $this->assertTrue(ChatMessage::where('role', 'assistant')->reorder('id', 'desc')->first()->is_error);
+    }
+
+    #[Test]
+    public function an_unreadable_plan_still_edits_with_the_users_own_words(): void
+    {
+        $this->fakeImageEditing('Maaf, ini bukan JSON.');
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        $message = $this->lastImageMessage();
+
+        $this->assertSame('edited', $message->image_edit);
+        $this->assertStringContainsString('Flyer PPDB hijau', $message->content);
+        $this->assertStringContainsString('jadikan latarnya biru', $message->content);
+    }
+
+    #[Test]
+    public function a_previous_image_missing_from_disk_means_a_fresh_image(): void
+    {
+        $this->fakeImageEditing(json_encode(['action' => 'edit', 'prompt' => 'Ubah.']));
+
+        $page = $this->chatPage()
+            ->set('imageMode', true)
+            ->set('modelId', 'img-model')
+            ->set('prompt', 'buatkan flyer ppdb')
+            ->call('send');
+
+        Storage::disk('local')->delete($this->lastImageMessage()->image_path);
+
+        $page->set('prompt', 'jadikan latarnya biru')->call('send')->assertHasNoErrors();
+
+        Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/images/edits'));
+        $this->assertNull($this->lastImageMessage()->image_edit);
+    }
+
+    #[Test]
+    public function chat_image_mode_sends_the_previous_image_as_a_message_part(): void
+    {
+        SiteSetting::set('ai_image_mode', 'chat', 'text', 'ai');
+
+        $image = ['choices' => [['message' => ['content' => '', 'images' => [['image_url' => ['url' => 'data:image/png;base64,'.base64_encode('PICTURE')]]]]]]];
+
+        Http::fake(['ai.test/v1/chat/completions' => function (Request $request) use ($image) {
+            $first = json_encode($request->data()['messages'][0]['content'] ?? '');
+
+            return match (true) {
+                isset($request->data()['modalities']) => Http::response($image),
+                str_contains($first, 'previous image') => Http::response(['choices' => [['message' => ['content' => json_encode(['action' => 'edit', 'prompt' => 'Ubah.'])]]]]),
+                default => Http::response(['choices' => [['message' => ['content' => 'Flyer']]]]),
+            };
+        }]);
+
+        $this->generateThenAsk('jadikan latarnya biru');
+
+        $bodies = array_values(array_filter($this->chatBodies(), fn (array $body): bool => isset($body['modalities'])));
+        $parts = end($bodies)['messages'][0]['content'];
+
+        $this->assertSame('Ubah.', $parts[0]['text']);
+        $this->assertStringStartsWith('data:image/', $parts[1]['image_url']['url']);
+        $this->assertSame('edited', $this->lastImageMessage()->image_edit);
     }
 }

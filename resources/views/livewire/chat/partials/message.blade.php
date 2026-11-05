@@ -50,7 +50,7 @@
                             @if ($message->image_used_ratio)
                                 <span class="chat-generated__ratio">{{ $message->image_used_ratio }}</span>
                             @endif
-                            <span>Dibuat dengan {{ $message->model }}</span>
+                            <span>{{ $message->image_edit === 'edited' ? 'Diedit dengan' : 'Dibuat dengan' }} {{ $message->model }}</span>
                         </div>
                         <a href="{{ route('chat.file', ['message' => $message->id, 'index' => 'image', 'download' => 1]) }}"
                             class="chat-generated__download">
@@ -58,6 +58,13 @@
                         </a>
                     </figcaption>
                 </figure>
+
+                @if ($message->image_edit === 'redrawn')
+                    <p class="chat-generated__notice">
+                        Model ini tidak bisa mengedit gambar langsung, jadi gambar dibuat ulang dari deskripsi dan hasilnya
+                        bisa berbeda. Pilih model gambar lain kalau perlu mengedit bagian tertentu saja.
+                    </p>
+                @endif
 
                 @if ($message->image_fell_back)
                     <p class="chat-generated__notice">
