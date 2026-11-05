@@ -2001,6 +2001,24 @@ a, button { -webkit-tap-highlight-color: transparent; }
     animation: chat-pending-pulse 1s linear infinite;
 }
 
+.chat-pending-message:has(.chat-pending-message__files)::after { display: none; }
+
+.chat-pending-message__files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.chat-pending-message.has-text .chat-pending-message__files { margin-top: 0.5rem; }
+
+.chat-pending-message .chat-file svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+}
+
+.chat-composer.has-sent-uploads .chat-chips { display: none; }
+
 @keyframes chat-pending-pulse {
     0%, 100% { opacity: 0.2; }
     50% { opacity: 0.65; }

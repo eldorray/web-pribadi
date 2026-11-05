@@ -110,6 +110,7 @@ function registerChatRequestHooks() {
         if (isGeneratingRequest(details)) {
             fail(() => {
                 finishSubmission(false);
+                showComposerUploads();
                 chatInFlight = false;
                 setChatBusy(false);
             });
@@ -122,8 +123,15 @@ function registerChatRequestHooks() {
         const methods = (commit?.calls ?? []).map((call) => call.method);
         if (!methods.some((method) => method === 'send' || method === 'retry')) return;
 
-        succeed(({ effects }) => finishSubmission(!submissionHasError(effects)));
-        fail(() => finishSubmission(false));
+        succeed(({ effects }) => {
+            finishSubmission(!submissionHasError(effects));
+            // After the morph: accepted chips are gone by then, rejected ones must return.
+            requestAnimationFrame(showComposerUploads);
+        });
+        fail(() => {
+            finishSubmission(false);
+            showComposerUploads();
+        });
 
         respond(() => {
             chatInFlight = false;
@@ -164,6 +172,32 @@ function removeSubmission(submission) {
     document.querySelector('[data-chat-scroll]')?.classList.remove('has-pending-message');
 }
 
+function showComposerUploads() {
+    document.querySelectorAll('.has-sent-uploads').forEach((form) => form.classList.remove('has-sent-uploads'));
+}
+
+/**
+ * The server only clears its uploads once the whole answer has been written, so
+ * the sent files move up here, or they would sit in the composer until then.
+ */
+function appendPendingFiles(bubble, names) {
+    const list = document.createElement('span');
+    const icon = document.querySelector('.chat-attachment svg');
+
+    list.className = 'chat-pending-message__files';
+
+    names.forEach((name) => {
+        const file = document.createElement('span');
+
+        file.className = 'chat-file';
+        if (icon) file.append(icon.cloneNode(true));
+        file.append(name);
+        list.append(file);
+    });
+
+    bubble.append(list);
+}
+
 function finishSubmission(succeeded) {
     const submission = activeSubmission;
     if (!submission) return;
@@ -181,8 +215,10 @@ function stageSubmission(textarea, animate = true) {
     const text = textarea.value.trim();
     const slot = document.querySelector('[data-chat-pending]');
     const scroller = document.querySelector('[data-chat-scroll]');
+    const form = textarea.closest('[data-chat-form]');
+    const files = Array.from(form?.querySelectorAll('.chat-chip__name') ?? [], (name) => name.textContent.trim());
 
-    if (text === '' || !slot || !scroller) return;
+    if ((text === '' && files.length === 0) || !slot || !scroller) return;
 
     pendingSubmission?.bubble?.remove();
 
@@ -192,6 +228,11 @@ function stageSubmission(textarea, animate = true) {
     bubble.setAttribute('role', 'status');
     bubble.setAttribute('aria-label', 'Pesan dikirim');
     bubble.textContent = text;
+    bubble.classList.toggle('has-text', text !== '');
+    if (files.length > 0) {
+        appendPendingFiles(bubble, files);
+        form.classList.add('has-sent-uploads');
+    }
     slot.appendChild(bubble);
     scroller.classList.add('has-pending-message');
     scrollThreadToBottom(true);
@@ -227,7 +268,7 @@ function stageSubmission(textarea, animate = true) {
         });
     }
 
-    pendingSubmission = { text, bubble };
+    pendingSubmission = { text, bubble, savedBefore: document.querySelectorAll('.chat-bubble').length };
     activeSubmission = pendingSubmission;
     // Keep Livewire's deferred model intact for this request; only clear the
     // visible control. The server response will sync the actual model to ''.
@@ -320,10 +361,8 @@ function reconcilePendingSubmission() {
     const submission = activeSubmission ?? pendingSubmission;
     if (!submission) return;
 
-    const savedMessages = Array.from(document.querySelectorAll('.chat-bubble__text'));
-    const saved = savedMessages.some((message) => message.textContent?.trim() === submission.text);
-
-    if (saved) finishSubmission(true);
+    // A count, because the text may repeat an older message, or be empty.
+    if (document.querySelectorAll('.chat-bubble').length > submission.savedBefore) finishSubmission(true);
 }
 
 function setupThreadObserver() {
