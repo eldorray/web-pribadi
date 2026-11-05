@@ -32,7 +32,8 @@ async function postForm(url, body) {
 function refreshPage(queue) {
     const id = queue.closest('[wire\\:id]')?.getAttribute('wire:id');
 
-    return id ? window.Livewire?.find(id)?.$refresh() : undefined;
+    // A refresh that a newer request replaced must not stop the queue.
+    return id ? Promise.resolve(window.Livewire?.find(id)?.$refresh()).catch(() => {}) : undefined;
 }
 
 function report(queue, message) {
@@ -42,7 +43,7 @@ function report(queue, message) {
 }
 
 function setProgress(queue, message) {
-    const progress = queue.querySelector('[data-grading-progress]');
+    const progress = document.querySelector('[data-grading-progress]');
     if (progress) progress.textContent = message;
 }
 
@@ -229,7 +230,7 @@ async function sendAudio(samples, urls, limit, onProgress) {
     }
 }
 
-async function prepareVideo(queue, file) {
+async function prepareVideo(queue, file, onListed) {
     if (file.size > MAX_VIDEO_BYTES) throw new Error('Ukuran video maksimal 1 GB.');
 
     const limit = Number(queue.dataset.uploadLimit);
@@ -248,6 +249,7 @@ async function prepareVideo(queue, file) {
         const urls = await postForm(queue.dataset.videoUrl, meta);
 
         await refreshPage(queue);
+        onListed();
         await sendFrames(video, urls, limit, Number(queue.dataset.maxFiles) || 10, (done, total) => {
             setProgress(queue, `${file.name}: mengambil gambar ${done} dari ${total}`);
         });
@@ -282,9 +284,9 @@ async function prepareVideo(queue, file) {
     }
 }
 
-async function uploadFile(queue, file) {
+async function uploadFile(queue, file, onListed) {
     if (isVideo(file)) {
-        await prepareVideo(queue, file);
+        await prepareVideo(queue, file, onListed);
 
         return;
     }
@@ -301,19 +303,47 @@ async function uploadFile(queue, file) {
     await postForm(queue.dataset.storeUrl, body);
 }
 
+/** A row per chosen file, until the server has its own row for that file. */
+function listPending(files) {
+    const list = document.querySelector('[data-grading-pending]');
+
+    return files.map((file) => {
+        const row = document.createElement('li');
+        const name = document.createElement('strong');
+        const badge = document.createElement('span');
+
+        row.className = 'chat-grading__row';
+        name.textContent = file.name;
+        badge.className = 'chat-grading__badge';
+        badge.textContent = 'Menunggu unggah';
+        row.append(name, badge);
+        list?.append(row);
+
+        return row;
+    });
+}
+
 async function uploadFiles(queue, files) {
     queue.querySelector('[data-grading-messages]')?.replaceChildren();
 
+    const rows = listPending(files);
+
     for (const [index, file] of files.entries()) {
+        const row = rows[index];
+        const badge = row.querySelector('.chat-grading__badge');
+
+        badge.textContent = 'Mengunggah';
+        badge.classList.add('is-busy');
         setProgress(queue, `Mengunggah ${index + 1} dari ${files.length}: ${file.name}`);
 
         try {
-            await uploadFile(queue, file);
+            await uploadFile(queue, file, () => row.remove());
         } catch (error) {
             report(queue, `${file.name}: ${error.message}`);
         }
 
         await refreshPage(queue);
+        row.remove();
     }
 
     setProgress(queue, '');
@@ -340,13 +370,16 @@ async function gradeQueued(queue) {
 
     try {
         for (;;) {
-            const next = Array.from(document.querySelectorAll('[data-grade-url]'))
-                .find((row) => !attempted.has(row.dataset.gradeUrl));
+            const waiting = Array.from(document.querySelectorAll('[data-grade-url]'))
+                .filter((row) => !attempted.has(row.dataset.gradeUrl));
+            const next = waiting[0];
 
             if (!next) break;
 
+            const total = attempted.size + waiting.length;
+
             attempted.add(next.dataset.gradeUrl);
-            setProgress(queue, `Menilai ${next.dataset.studentName ?? ''}…`);
+            setProgress(queue, `Menilai ${attempted.size} dari ${total}: ${next.dataset.studentName ?? ''}`);
 
             try {
                 await postForm(next.dataset.gradeUrl, new FormData());

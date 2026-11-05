@@ -583,4 +583,109 @@ class GradingAiTest extends TestCase
         );
         $this->assertStringContainsString('Gambar 2 dari 2', $encoded);
     }
+
+    private function gradedEssay(array $attributes = []): GradingItem
+    {
+        $item = $this->essay('Esai rahasia mahasiswa.');
+        $item->update($attributes + ['ai_result' => [
+            'criteria' => [
+                ['score' => 7, 'reason' => 'Argumen kurang contoh', 'evidence' => 'Kutipan paragraf dua', 'needs_review' => false],
+                ['score' => 15, 'reason' => 'Ejaan rapi', 'evidence' => '', 'needs_review' => false],
+            ],
+            'summary' => 'Esai cukup kuat.',
+            'injection_attempt' => false,
+        ]]);
+
+        return $item;
+    }
+
+    #[Test]
+    public function a_note_is_written_from_the_lecturers_scores(): void
+    {
+        $this->fakeReply(['note' => '  Argumen perlu contoh.  ']);
+
+        $note = (new GradingAi)->draftNote($this->gradedEssay(), [9.5, 12]);
+
+        $this->assertSame('Argumen perlu contoh.', $note);
+
+        $system = $this->sentMessages()[0]['content'];
+
+        $this->assertStringContainsString('Isi: 9.5 dari 10', $system);
+        $this->assertStringContainsString('Bahasa: 12 dari 20', $system);
+    }
+
+    #[Test]
+    public function a_note_treats_the_ai_review_as_data_and_leaves_out_the_work_itself(): void
+    {
+        $this->fakeReply(['note' => 'Baik.']);
+
+        (new GradingAi)->draftNote($this->gradedEssay(), [9, 12]);
+
+        [$system, $user] = array_column($this->sentMessages(), 'content');
+
+        preg_match('/DATA-[A-Za-z0-9]{16}/', $user, $marker);
+
+        $this->assertNotEmpty($marker);
+        $this->assertStringContainsString($marker[0], $system);
+        $this->assertStringContainsString('Argumen kurang contoh', $user);
+        $this->assertStringContainsString('Esai cukup kuat.', $user);
+        $this->assertStringNotContainsString('Esai rahasia', $user);
+        $this->assertStringNotContainsString('Budi', $system.$user);
+    }
+
+    #[Test]
+    public function a_note_does_not_repeat_ai_remarks_on_lecturer_only_criteria(): void
+    {
+        $this->batch->update(['rubric_snapshot' => ['name' => 'R', 'guidance' => '', 'criteria' => [
+            ['name' => 'Isi', 'description' => '', 'max_score' => 10],
+            ['name' => 'Pronunciation', 'description' => '', 'max_score' => 20, 'human_only' => true],
+        ]]]);
+
+        $item = $this->gradedEssay(['ai_result' => [
+            'criteria' => [
+                ['score' => 7, 'reason' => 'Argumen kurang contoh', 'evidence' => '', 'needs_review' => false],
+                ['score' => null, 'reason' => 'Dinilai dosen: AI tidak bisa mendengar suara', 'evidence' => '', 'needs_review' => false],
+            ],
+            'summary' => '',
+            'injection_attempt' => false,
+        ]]);
+
+        $this->fakeReply(['note' => 'Baik.']);
+
+        (new GradingAi)->draftNote($item->fresh(), [8, 18]);
+
+        [$system, $user] = array_column($this->sentMessages(), 'content');
+
+        $this->assertStringContainsString('Pronunciation: 18 dari 20', $system);
+        $this->assertStringNotContainsString('tidak bisa mendengar', $user);
+    }
+
+    #[Test]
+    public function a_note_works_without_any_ai_review(): void
+    {
+        $this->fakeReply(['note' => 'Baik.']);
+
+        $this->assertSame('Baik.', (new GradingAi)->draftNote($this->essay(), [5, 5]));
+    }
+
+    #[Test]
+    public function a_note_is_cut_to_what_the_field_can_hold(): void
+    {
+        $this->fakeReply(['note' => str_repeat('a', 6000)]);
+
+        $this->assertSame(5000, mb_strlen((new GradingAi)->draftNote($this->gradedEssay(), [9, 12])));
+    }
+
+    #[Test]
+    public function an_empty_note_is_retried_then_reported(): void
+    {
+        $this->fakeReply(['note' => '   ']);
+
+        try {
+            (new GradingAi)->draftNote($this->gradedEssay(), [9, 12]);
+            $this->fail('Expected an AiException.');
+        } catch (AiException) {
+            Http::assertSentCount(2);
+        }
+    }
 }

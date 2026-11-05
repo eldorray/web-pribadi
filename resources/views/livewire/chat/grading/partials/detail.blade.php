@@ -26,6 +26,14 @@
         <p class="chat-grading__error" role="alert">{{ $item->error }}</p>
     @endif
 
+    @if ($item->isBusy())
+        <p class="chat-grading__status chat-grading__progress" role="status">
+            {{ $item->status === 'processing'
+                ? 'AI sedang menilai tugas ini. Hasilnya muncul sendiri, tidak perlu klik lagi.'
+                : 'Tugas ini menunggu giliran dinilai.' }}
+        </p>
+    @endif
+
     <div class="chat-grading__preview">
         @if ($item->type === 'image')
             <div class="chat-grading__images">
@@ -87,11 +95,19 @@
                     @error('transcriptDraft') <small class="chat-grading__error">{{ $message }}</small> @enderror
                 </label>
                 <div class="chat-grading__actions">
-                    <button type="submit" class="chat-grading__secondary">Simpan transkrip dan nilai ulang</button>
-                    @if ($transcriptMissing)
-                        <button type="button" class="chat-grading__secondary"
-                            wire:click="gradeWithoutTranscript({{ $item->id }})"
-                            wire:confirm="Isi ucapan tidak akan terbaca AI. Lanjut menilai tanpa transkrip?">Nilai tanpa transkrip</button>
+                    @if ($item->isBusy())
+                        <button type="button" class="chat-grading__secondary" disabled wire:key="transcript-busy">Sedang dinilai…</button>
+                    @else
+                        <button type="submit" class="chat-grading__secondary" wire:key="transcript-save">
+                            <span wire:loading.remove wire:target="saveTranscript">Simpan transkrip dan nilai ulang</span>
+                            <span wire:loading wire:target="saveTranscript">Menyimpan…</span>
+                        </button>
+                        @if ($transcriptMissing)
+                            <button type="button" class="chat-grading__secondary" wire:key="transcript-skip"
+                                wire:click="gradeWithoutTranscript({{ $item->id }})"
+                                wire:loading.attr="disabled" wire:target="gradeWithoutTranscript"
+                                wire:confirm="Isi ucapan tidak akan terbaca AI. Lanjut menilai tanpa transkrip?">Nilai tanpa transkrip</button>
+                        @endif
                     @endif
                 </div>
             </form>
@@ -148,8 +164,19 @@
 
         <label class="chat-grading__field">
             <span>Catatan dosen</span>
-            <textarea wire:model="note" rows="3" maxlength="5000"></textarea>
+            <textarea wire:model="note" rows="3" maxlength="5000" wire:loading.attr="readonly" wire:target="generateNote"></textarea>
+            @error('note') <small class="chat-grading__error">{{ $message }}</small> @enderror
         </label>
+
+        <div class="chat-grading__note-tools">
+            <button type="button" class="chat-grading__secondary"
+                x-on:click="if (! $wire.note.trim() || confirm('Ganti catatan yang sudah ditulis?')) $wire.generateNote()"
+                wire:loading.attr="disabled" wire:target="generateNote">
+                <span wire:loading.remove wire:target="generateNote">Buat catatan dengan AI</span>
+                <span wire:loading wire:target="generateNote">Membuat catatan…</span>
+            </button>
+            <small class="chat-grading__meta">Dibuat dari skor di atas. Periksa dulu, lalu klik Simpan atau Setujui.</small>
+        </div>
 
         @error('approve') <p class="chat-grading__alert" role="alert">{{ $message }}</p> @enderror
 
@@ -162,9 +189,15 @@
         </div>
 
         <div class="chat-grading__actions">
-            <button type="button" class="chat-grading__link" wire:click="regrade({{ $item->id }})">
-                Nilai ulang dengan AI
-            </button>
+            @if ($item->isBusy())
+                <button type="button" class="chat-grading__link" disabled wire:key="regrade-busy">Sedang dinilai…</button>
+            @else
+                <button type="button" class="chat-grading__link" wire:key="regrade" wire:click="regrade({{ $item->id }})"
+                    wire:loading.attr="disabled" wire:target="regrade">
+                    <span wire:loading.remove wire:target="regrade">Nilai ulang dengan AI</span>
+                    <span wire:loading wire:target="regrade">Memulai…</span>
+                </button>
+            @endif
             <button type="button" class="chat-grading__link" wire:click="deleteItem({{ $item->id }})"
                 wire:confirm="Hapus tugas {{ $item->student_name }} beserta nilainya?">Hapus tugas</button>
         </div>

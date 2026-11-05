@@ -75,6 +75,12 @@ class GradingItem extends Model
         return $this->belongsTo(GradingBatch::class, 'grading_batch_id');
     }
 
+    /** Waiting for the AI or being read by it, so another request would only cost money. */
+    public function isBusy(): bool
+    {
+        return in_array($this->status, [self::QUEUED, self::PROCESSING], true);
+    }
+
     public function needsReview(): bool
     {
         return in_array(true, array_column($this->ai_result['criteria'] ?? [], 'needs_review'), true);

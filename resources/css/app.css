@@ -3325,6 +3325,63 @@ a, button { -webkit-tap-highlight-color: transparent; }
 
 .chat-grading__row-note { flex-basis: 100%; }
 
+.chat-grading__live { display: contents; }
+
+.chat-grading__rows:empty,
+.chat-grading__progress:empty { display: none; }
+
+.chat-grading__live:has([data-grading-pending]:not(:empty)) + .chat-grading__rows .chat-grading__empty { display: none; }
+
+.chat-grading__progress {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+    background: var(--color-card-soft);
+}
+
+.chat-grading__progress::before,
+.chat-grading__badge.is-busy::before {
+    content: '';
+    flex: none;
+    display: inline-block;
+    width: 0.875em;
+    height: 0.875em;
+    border: 2px solid var(--color-line);
+    border-top-color: var(--color-ink-3);
+    border-radius: 50%;
+    vertical-align: -0.125em;
+    animation: chat-grading-spin 0.8s linear infinite;
+}
+
+.chat-grading__badge.is-busy::before { margin-right: 0.25rem; }
+
+@keyframes chat-grading-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-grading__progress::before,
+    .chat-grading__badge.is-busy::before { animation: none; }
+}
+
+/* The queue is already running, so this button could only look ignored. */
+.chat-grading:has([data-grading-queue][data-running]) [data-grading-run] { display: none; }
+
+.chat-grading__link:disabled {
+    opacity: 0.6;
+    text-decoration: none;
+    cursor: not-allowed;
+}
+
+.chat-grading__note-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .chat-grading__detail-head {
     display: flex;
     align-items: flex-start;

@@ -40,7 +40,7 @@
                 @if ($item->type === 'image' && count((array) $item->files) > 1)
                     <span class="chat-grading__badge">{{ count($item->files) }} gambar</span>
                 @endif
-                <span class="chat-grading__badge">{{ $statusLabels[$item->status] ?? $item->status }}</span>
+                <span class="chat-grading__badge {{ in_array($item->status, ['preparing', 'processing'], true) ? 'is-busy' : '' }}">{{ $statusLabels[$item->status] ?? $item->status }}</span>
             </span>
 
             @if ($item->error)

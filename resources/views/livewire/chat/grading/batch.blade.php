@@ -1,4 +1,9 @@
 <div class="chat-grading">
+    {{-- One grading is one long request, so the row only changes if the page asks again. --}}
+    @if ($grading)
+        <div hidden wire:poll.5s wire:key="grading-poll"></div>
+    @endif
+
     <header class="chat-grading__header">
         <a href="{{ route('chat.grading') }}" wire:navigate class="chat-icon-btn" aria-label="Kembali ke Penilaian"
             title="Kembali ke Penilaian">
@@ -30,7 +35,6 @@
             Video maksimal 20 menit, diolah di browser ini dan tidak disimpan di server, jadi biarkan halaman tetap terbuka.
             Suara dari file di atas 500 MB tidak dibaca otomatis, jadi transkripnya perlu ditempel.
         </p>
-        <p class="chat-grading__status" data-grading-progress role="status"></p>
         <ul class="chat-grading__messages" data-grading-messages></ul>
     </section>
 
@@ -41,6 +45,11 @@
                 @if ($items->contains('status', \App\Models\GradingItem::QUEUED))
                     <button type="button" class="chat-grading__primary" data-grading-run>Mulai menilai</button>
                 @endif
+            </div>
+
+            <div class="chat-grading__live" wire:ignore>
+                <p class="chat-grading__status chat-grading__progress" data-grading-progress role="status"></p>
+                <ul class="chat-grading__rows" data-grading-pending></ul>
             </div>
 
             @include('livewire.chat.grading.partials.table')

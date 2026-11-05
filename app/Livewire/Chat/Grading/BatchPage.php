@@ -7,6 +7,8 @@ namespace App\Livewire\Chat\Grading;
 use App\Models\ChatUser;
 use App\Models\GradingBatch;
 use App\Models\GradingItem;
+use App\Services\AiException;
+use App\Services\GradingAi;
 use App\Services\GradingFiles;
 use App\Support\UploadLimits;
 use Illuminate\Support\Facades\Storage;
@@ -143,7 +145,15 @@ class BatchPage extends Component
             'transcriptDraft.max' => 'Transkrip terlalu panjang.',
         ]);
 
-        $this->ownedItem((int) $this->openItemId)->update([
+        $item = $this->ownedItem((int) $this->openItemId);
+
+        if ($item->status === GradingItem::PROCESSING) {
+            $this->addError('transcriptDraft', 'AI masih menilai tugas ini. Tunggu sampai selesai.');
+
+            return;
+        }
+
+        $item->update([
             'transcript' => trim($this->transcriptDraft),
             'transcript_status' => GradingItem::TRANSCRIPT_DONE,
             'status' => GradingItem::QUEUED,
@@ -155,13 +165,43 @@ class BatchPage extends Component
 
     public function gradeWithoutTranscript(int $id): void
     {
-        $this->ownedItem($id)->update([
+        $item = $this->ownedItem($id);
+
+        if ($item->status === GradingItem::PROCESSING) {
+            return;
+        }
+
+        $item->update([
             'transcript_status' => GradingItem::TRANSCRIPT_SKIPPED,
             'status' => GradingItem::QUEUED,
             'error' => null,
         ]);
 
         $this->dispatch('grading-run');
+    }
+
+    /**
+     * Fill the note from the scores on screen. Nothing is stored here: the draft
+     * is the lecturer's to edit, and it is saved by Simpan or Setujui like any note.
+     */
+    public function generateNote(): void
+    {
+        try {
+            $this->validateScores(required: true);
+        } catch (ValidationException $e) {
+            $this->setErrorBag($e->validator->errors());
+            $this->addError('note', 'Isi skor semua kriteria dulu, karena catatan dibuat dari skor itu.');
+
+            return;
+        }
+
+        @set_time_limit(180);
+
+        try {
+            $this->note = (new GradingAi)->draftNote($this->ownedItem((int) $this->openItemId), $this->normalisedScores());
+        } catch (AiException $e) {
+            $this->addError('note', $e->getMessage());
+        }
     }
 
     public function renameStudent(int $id, string $name): void
@@ -207,6 +247,7 @@ class BatchPage extends Component
             'batch' => $batch,
             'items' => $items,
             'open' => $open,
+            'grading' => $items->contains(fn (GradingItem $item): bool => $item->isBusy()),
             'criteria' => $batch->criteria(),
             'maxScore' => $batch->maxScore(),
             'aiMaxScore' => $batch->aiMaxScore(),

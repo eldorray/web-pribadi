@@ -8,9 +8,12 @@ use App\Livewire\Chat\Grading\BatchPage;
 use App\Models\ChatUser;
 use App\Models\GradingBatch;
 use App\Models\GradingItem;
+use App\Models\SiteSetting;
+use App\Services\AiClient;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -641,6 +644,123 @@ class GradingReviewTest extends TestCase
 
         $this->assertCount(2, $item->fresh()->files);
         $this->assertCount(2, $video->fresh()->files);
+    }
+
+    #[Test]
+    public function a_submission_being_graded_says_so_and_keeps_refreshing(): void
+    {
+        $item = $this->item(['status' => GradingItem::PROCESSING]);
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->assertSee('AI sedang menilai tugas ini')
+            ->assertSee('Sedang dinilai…')
+            ->assertSeeHtml('wire:poll.5s');
+    }
+
+    #[Test]
+    public function a_finished_submission_stops_refreshing_and_offers_a_regrade(): void
+    {
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->assertDontSee('AI sedang menilai tugas ini')
+            ->assertSee('Nilai ulang dengan AI')
+            ->assertDontSeeHtml('wire:poll.5s');
+    }
+
+    #[Test]
+    public function the_task_list_has_a_place_for_upload_progress(): void
+    {
+        $this->page()->assertSeeHtmlInOrder(['id="results-heading"', 'data-grading-progress', 'data-grading-pending', 'chat-grading__rows']);
+    }
+
+    #[Test]
+    public function a_transcript_cannot_requeue_a_submission_being_graded(): void
+    {
+        // Every click used to queue another paid grading on top of the running one.
+        $item = $this->item(['type' => 'video', 'status' => GradingItem::PROCESSING, 'transcript' => 'Lama', 'extracted_text' => null]);
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('transcriptDraft', 'Baru')
+            ->call('saveTranscript')
+            ->assertHasErrors('transcriptDraft')
+            ->assertNotDispatched('grading-run');
+
+        $this->assertSame(GradingItem::PROCESSING, $item->fresh()->status);
+        $this->assertSame('Lama', $item->fresh()->transcript);
+    }
+
+    #[Test]
+    public function grading_without_a_transcript_cannot_requeue_a_submission_being_graded(): void
+    {
+        $item = $this->item(['type' => 'video', 'status' => GradingItem::PROCESSING, 'extracted_text' => null]);
+
+        $this->page()->call('gradeWithoutTranscript', $item->id)->assertNotDispatched('grading-run');
+
+        $this->assertSame(GradingItem::PROCESSING, $item->fresh()->status);
+    }
+
+    private function fakeNote(string $note): void
+    {
+        SiteSetting::set('ai_base_url', 'https://ai.test/v1', 'text', 'ai');
+        AiClient::setApiKey('sk-TEST');
+        Http::fake(['ai.test/*' => Http::response(['choices' => [['message' => ['content' => json_encode(['note' => $note])]]]])]);
+    }
+
+    #[Test]
+    public function an_ai_note_fills_the_field_and_saves_nothing(): void
+    {
+        $this->fakeNote('Argumen sudah baik, perbaiki tata bahasa.');
+        $item = $this->item(['status' => GradingItem::READY]);
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('scores', [9, 12])
+            ->call('generateNote')
+            ->assertHasNoErrors()
+            ->assertSet('note', 'Argumen sudah baik, perbaiki tata bahasa.');
+
+        $item->refresh();
+
+        $this->assertNull($item->lecturer_note);
+        $this->assertEquals([7, 15], $item->final_scores);
+        $this->assertSame(GradingItem::READY, $item->status);
+        $this->assertNull($item->approved_at);
+    }
+
+    #[Test]
+    public function an_ai_note_needs_every_score_first(): void
+    {
+        $this->fakeNote('Tidak boleh terkirim.');
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('scores', [9, null])
+            ->call('generateNote')
+            ->assertHasErrors(['note', 'scores.1'])
+            ->assertSet('note', '');
+
+        Http::assertNothingSent();
+    }
+
+    #[Test]
+    public function a_failed_ai_note_keeps_what_the_lecturer_wrote(): void
+    {
+        SiteSetting::set('ai_base_url', 'https://ai.test/v1', 'text', 'ai');
+        AiClient::setApiKey('sk-TEST');
+        Http::fake(['ai.test/*' => Http::response(['error' => ['message' => 'Sibuk']], 500)]);
+        $item = $this->item();
+
+        $this->page()
+            ->call('openItem', $item->id)
+            ->set('note', 'Catatan saya')
+            ->call('generateNote')
+            ->assertHasErrors('note')
+            ->assertSet('note', 'Catatan saya');
     }
 
     #[Test]
